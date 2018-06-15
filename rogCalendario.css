@@ -1,0 +1,52 @@
+/*
+    Opciones de formateo para el Objeto Calendario
+    
+    Rafa Gómez
+    rafagomez.neocities.org
+*/
+
+    .calNbMes { /* Nombre del mes e indicadores de Próximo y Siguiente mes */
+        font-size: 300%;
+        text-align: center;
+        }
+    .calMesAnt { /* Indicador de Mes Anterior */
+        font-size: .6em
+	}
+    .calMesAnt:hover {
+    	cursor: w-resize;
+	}
+    .calMesSig { /* Indicador de Mes Siguiente */
+        font-size: .6em
+	}
+    .calMesSig:hover {
+        cursor: e-resize;
+	}
+    .calSem { display: inline } /* Contenedor de cada Semana */
+    .calDia { /* Celda que muestra cada día */
+        width: 28%;
+        margin: 3px;
+        padding: 3px;
+        font-size: 3em;
+        text-align: center;
+        flex: 1;
+        border-radius: 25px;
+        background-color: lightsteelblue;
+        color: white;
+     }
+    .calDia:hover {
+        color: ivory;
+        background-color: skyblue;
+    }
+    .calNoMes { /* Días que no pertenecen al Mes Actual */
+         background-color: darkgrey;
+         border-radius: 25px;
+    }
+    .NoLaboral { /* Feriados y Fines de Semana */
+        background-color: white;
+        color: red;
+        border: 1px solid red;
+        }
+    #Calendario { /* Contenedor del Calendario */
+        background-color: cadetblue;
+        color: white;
+        }

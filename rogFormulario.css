@@ -1,0 +1,49 @@
+/* Estilos para los formularios creados con la Librería rogLib */
+
+	label {
+		font-style: oblique;
+		font-weight: bold;
+		width: 100px;
+		float: left;
+	}
+	.error {color: #FF0000;}
+	.rogBtn {
+		background-color: #0047b3;
+		border: none;
+		color: white;
+		padding: 10px 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 12px;
+		margin: 3px 2px;
+		cursor: pointer;
+	}
+	.rogBtn:hover {
+		font-weight: bold;
+	}
+	.buscable {
+		color: lightcyan;
+		background-color: black;
+		background-image: url('searchicon.png');
+		background-position: 10px 10px; 
+		background-repeat: no-repeat;
+		padding-left: 40px;
+	}
+/* Tablas */
+	table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	th, td {
+		text-align: left;
+		padding: 8px;
+	}
+
+	tr:nth-child(even){background-color: #f2f2f2}
+
+	th {
+		background-color: #0047b3;
+		color: white;
+	}

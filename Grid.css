@@ -1,0 +1,37 @@
+.header,
+.footer,
+.sidebar,
+.main {
+  padding: 1.2em;
+}
+
+.header { color: white; background-color: #0D47A1;
+	grid-row: 1;
+	grid-column-start: 1;
+	grid-column-end: 5}
+}
+.footer { background-color: #2196F3;  
+	grid-row: 5;
+	grid-column-start: 1;
+	grid-column-end: 5;
+}
+.main { background-color: #BBDEFB; 
+  grid-column: 3;
+  grid-row: 3;
+}
+.sidebar { background-color: #EEEEEE; 
+  grid-column: 1;
+  grid-row: 3;
+}
+body {
+  margin: 0 auto;
+}
+
+.container {
+  display: grid;
+  /* Grid de 3x5 */
+  /* 3 columnas: 1a de 200px, 2a como margen (1%), 3a ocupa el espacio restante */
+  grid-template-columns: 200px 1% 1fr;
+  /* 5 filas: grid-rows: 1a, 3a y 5a ancho automático, 2a y 4a como margen de 15px */
+  grid-template-rows: auto 15px auto 15px auto;
+}

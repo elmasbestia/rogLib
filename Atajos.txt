@@ -1,0 +1,16 @@
+Atajo:
+1. Abro una "página"
+2. Me ubico en un registro particular (?) (O grupo de ellos) Es un { que: valor }
+3. Lo guardo como "Atajo"
+4. Al accederlo, abre la página y realiza la operación Bsq(que, valor) correspondiente
+
+Al entrar en una página, reconocer si hay un "parámetro de entrada" (?) que es un atajo y proceder en consecuencia
+
+Es un concepto parecido al ... que maneja lo que se va a "renderizar"
+
+Propiedades:
+1. Página / Formulario
+2. Registro / Grupo de Registros
+3. Público/Privado (?)
+4. Al iniciar sesión
+5. Dueño (?)

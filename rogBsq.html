@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.1/js/all.js"></script>
+
+    <style>
+ 
+		.box{
+			margin: 100px auto;
+			width: 300px;
+			height: 50px;
+		}
+
+        .container-2{
+            width: 300px;
+            vertical-align: middle;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .container-2 input#search{
+            width: 50px;
+            height: 50px;
+            background: #2b303b;
+            border: none;
+            font-size: 10pt;
+            float: left;
+            color: #262626;
+            padding-left: 35px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            color: #fff;
+ 
+            -webkit-transition: width .55s ease;
+            -moz-transition: width .55s ease;
+            -ms-transition: width .55s ease;
+            -o-transition: width .55s ease;
+            transition: width .55s ease;
+        }
+
+        .container-2 input#search::-webkit-input-placeholder {
+            color: #65737e;
+        }
+
+        .container-2 input#search:-moz-placeholder { /* Firefox 18- */
+            color: #65737e;  
+        }
+
+        .container-2 input#search::-moz-placeholder {  /* Firefox 19+ */
+            color: #65737e;  
+        }
+
+        .container-2 input#search:-ms-input-placeholder {  
+color: #65737e;  
+}
+
+        .container-2 .icon{
+            position: absolute;
+            top: 50%;
+            margin-left: 17px;
+            margin-top: 17px;
+            z-index: 1;
+            color: #4f5b66;
+        }
+
+        .container-2 input#search:focus, .container-2 input#search:active{
+            outline:none;
+            width: 300px;
+        }
+
+        .container-2:hover input#search{
+            width: 300px;
+        }
+
+        .container-2:hover .icon{
+            color: #93a2ad;
+        }
+    </style>
+    
+    <title>Objeto Buscador</title>
+    
+    <script>
+ 		function objDom(dom) { return typeof dom === "string" ? document.getElementById(dom) : dom }
+
+        function modCss(dom,reglas) {
+            let css = objDom("vntBsq").style;
+            for (regla in reglas) {
+                if(reglas[regla] instanceof Array ) {
+                    reglas[regla].forEach(x => { css[x[0]] = x[1]})
+                } else {
+                    css[regla] = reglas[regla];
+                }
+                
+            }
+        }
+
+        function iniBsq() {
+            boton = objDom("btnBsq")
+
+            modCss("vntBsq", { float: "right", width: "400px", height: "50px"});
+            modCss("cntBsq", { width: "300px", display: "none" });
+            modCss(boton, { width: "50px", height: "50px", background: "#2b303b", border: "none", color: "#fff", 
+                otros: [["font-size", "10pt"],
+                        ["padding-left", "35px"]]/*, 
+                        ["-webkit-border-radius", "5px"], 
+                        ["-moz-border-radius","5px"],
+                        ["border-radius", "5px"], 
+                        ["-webkit-transition", "width .55s ease"], 
+                        ["-moz-transition", "width .55s ease"], 
+                        ["-ms-transition", "width .55s ease"], 
+                        ["-o-transition", "width .55s ease"], 
+                        ["transition", "width .55s ease"]
+                ]*/
+            });
+            boton.hover = (e) => { objDom("cntBsq").display = "block"}
+        }
+    </script>
+</head>
+
+<body> <!-- onload="iniBsq()"> -->
+  <h1>Prueba del buscador</h1>
+
+    <h2>EJEMPLO 2:</h2>
+    <div class="box">
+        <div class="container-2">
+            <span class="icon"><i class="fa fa-search"></i></span>
+            <input type="search" id="search" placeholder="Search..." />
+        </div>
+    </div>
+
+    <div id="vntBsq">
+        <span id="btnBsq"><i class="fa fa-search"></i></span>
+        <span id="cntBsq">
+            <select id="queBsq">
+                <option value="que1">Que 1</option>
+                <option value="que2">Que 2</option>
+                <option value="que3">Que 3</option>
+            </select>
+            <input type="search" id="valBsq"/>
+        </span>
+    </div>
+    
+    <h2>Testigo</h2>
+    
+    <div>
+        <span>
+            <select>
+                <option value="que1">Que 1</option>
+                <option value="que2">Que 2</option>
+                <option value="que3">Que 3</option>
+            </select>
+            <input type="search"/>
+        </span>
+        <span><i class="fa fa-search"></i></span>
+    </div>
+
+    
+  <footer>Elaborado por <a href="https://rafagomez.neocities.org">Rafa Gómez</a></footer>
+</body>
+</html>
+
+
+

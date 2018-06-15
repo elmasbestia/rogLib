@@ -1,0 +1,35 @@
+/* Hoja de Estilo para el Objeto rogTxt */
+
+    /* Elemento dom para leer el texto a buscar */
+    .buscable {
+        height: 20px;
+        color: lightcyan;
+        background-color: #365e91;
+        background-image: url('Imagenes/Busqueda.png');
+        background-position: 1px 1px;
+        background-size: 20px;
+        background-repeat: no-repeat;
+        padding-left: 30px;
+    }
+    /* Contenedor de la lista (dom) */
+    .rogTxtLista {margin: 10px; padding: 5px}
+    /* Líneas que contienen la cadena  (<li>)  */
+    /* .rogLiTxt {} */
+    .rogLiTxt:hover {
+        height: 20px;
+        color: lightcyan;
+    }
+    /* Contenedor del Texto (dom) */
+    .rogTxt {
+        margin: auto;
+        padding: 10px;
+        overflow: scroll;
+        max-height: 300px;
+    }
+    /* Cantidad de elementos de la lista (<span>) */
+    .rogCantTxt {
+        color: lightcyan;
+        background-color: #365e91;
+        font-weight: bolder;
+        border-radius: 20px;
+    }

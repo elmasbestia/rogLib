@@ -1,0 +1,8 @@
+{
+	"EDO": "DISTRITO CAPITAL",
+	"ABREV": "DC",
+	"Municipios": [{
+		"Municipio": "Libertador",
+		"Parroquias": ["23 de Enero", "Altagracia", "Antimano", "Candelaria", "Caricuao", "Catedral", "Coche", "El Junquito", "EL Paraiso", "El Recreo", "El Valle", "La Pastora", "La Vega", "Macarao", "San Agustin", "San Bernardino", "San Jose", "San Juan", "San Pedro", "Santa Rosalia", "Santa Teresa", "Sucre"]
+	}]
+}

@@ -1,0 +1,26 @@
+/* CSS para rogDPT */
+
+/*                   L i s t a s  */
+.rogLstEdo {}
+.rogLstMun {background-color: white; color: black}
+.rogLstPq  {background-color: white; color: black}
+
+/*                   E l e m e n t o s  */
+.rogLiEdo {
+    background-color: darkcyan; 
+    color: white;
+    padding: 2%;
+}
+.rogLiEdo:hover {
+    border: 1px solid silver;
+}
+.rogLiSelEdo {} /* Estado Seleccionado */
+.rogLiMun {}
+.rogLiSelMun {background-color: darkcyan; color: white} /* Municipio Seleccionado (Lista) */
+.rogLiPq  {}
+.rogLiPq:hover { cursor: pointer }
+.rogLiSelPq { font-weight: bolder; background-color: beige } /* Parroquia Seleccionada (Lista) */
+/*                 C o m b o s  */
+.rogCmbEdo {}
+.rogcmbMun {}
+.rogcmbPq  {}
