@@ -1,5 +1,5 @@
 // Objeto Buscador
-// 
+// Rafa Gómez rafagomez.neocities.org
 
 function rogBsq(dom, opciones, fn) {
 	const bsq = document.createElement("DIV");
@@ -9,8 +9,22 @@ function rogBsq(dom, opciones, fn) {
 	const opcBsq = creaOpc(opciones);
 	
 	function llamaBsq() {
-		fn(this.que(), this.valor())
+		fn(slfBsq.que(), slfBsq.valor());
 	}
+
+    function divEspera() {
+        retorno = document.createElement("DIV");
+        retorno.innerHTML = "<i class='fa fa-spinner fa-spin'></i>";
+        retorno.innerHTML += "<span id='txtEspera'></span>";
+
+        retorno.id ="divEspera";
+        modCss(retorno, {
+            border: "solid 1px black",
+            padding: "10px",
+            display: "none"
+        });
+        return retorno;
+    }
 	
 	function creaOpc(opciones) {
 		let texto = "", opcion = {};
@@ -48,42 +62,63 @@ function rogBsq(dom, opciones, fn) {
 	function creaBtn() {
 		let retorno = document.createElement("BUTTON");
 		retorno.id="btnBsq";
-		retorno.class = "rogBtn";
+		retorno.className = "rogBtn";
 		retorno.onclick= llamaBsq;
 		retorno.innerHTML = "<i class='fa fa-search'></i>";
-		retorno.onmouseover = () => { bsq.style.display = "block"; }
-		//retorno.style = "width: 50px; height: 50px; border: none; color: #fff"; 
-		retorno.style = "font-size: 10pt; padding-left: 35px";
-		retorno.style = "-webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px"; 
-/*
-					["-webkit-transition", "width .55s ease"], 
-					["-moz-transition", "width .55s ease"], 
-					["-ms-transition", "width .55s ease"], 
-					["-o-transition", "width .55s ease"], 
-					["transition", "width .55s ease"]
-*/
+		retorno.onmouseover = () => { bsq.style.display = "block"; };
+        modCss(retorno, { width: "50px", height: "50px", border: "none",
+            otros: [["font-size", "10pt"],
+                    ["padding-left", "35px"],
+                    ["-webkit-border-radius", "5px"],
+                    ["-moz-border-radius","5px"],
+                    ["border-radius", "5px"],
+                    ["-webkit-transition", "width .55s ease"],
+                    ["-moz-transition", "width .55s ease"],
+                    ["-ms-transition", "width .55s ease"],
+                    ["-o-transition", "width .55s ease"],
+                    ["transition", "width .55s ease"]
+            ]
+        });
 		return retorno;
 	}
 	
 	function creaDom(dom) {
 		bsq.appendChild(opcBsq);
 		bsq.appendChild(valBsq);
-		//bsq.style.display = "none";
+		bsq.style= "width= 100%; height: 100%; alignItems: flex-end";
+		bsq.style.display = "none";
 		
 		let cnt = document.createElement("DIV");
 		cnt.appendChild(bsq);
 		cnt.appendChild(btnBsq);
 		cnt.style = "width: 300px; height: 30px; display: flex; alignItems: flex-end";
 		cnt.class = "rogBtn";
-		
+
 		let vnt = objDom(dom);
+	    vnt.appendChild(divEspera());   // Para mensajes de Espera
 		vnt.appendChild(cnt);
-		vnt.style = "width: 400px; height: 50px";
+		modCss(vnt,
+		    { height: "50px", display: "flex",
+		    otros: [
+		        ["justify-content", "space-between"], ["align-items", "stretch"]
+		    ]}
+		);
 	}
 
 	this.query = () => ({ que: this.que(), valor: this.valor() });
 	this.que = () => opcBsq.value;
 	this.valor = () => valBsq.value;
-	
+	this.Espera = (msj) => {
+        let div = document.getElementById("divEspera");
+        if(msj) {
+            document.getElementById("txtEspera").textContent = msj;
+            div.style.display = "inline";
+        }  else {
+            div.style.display = "none";
+        }
+	};
+
 	creaDom(dom);
+
+	var slfBsq = this;
 }

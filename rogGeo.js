@@ -218,7 +218,7 @@ function rogGeo(dom, domCoo, inicio, Marcas, primerPunto) {
     defPosicion();
     defPrimerPunto();
 
-    self.base.height = "100%";
+    // self.base.height = "100%"; Era mentira lo del 100%
     self.mapa = new google.maps.Map(self.base, {center: primero, zoom: 18});
 
     fino = true;
