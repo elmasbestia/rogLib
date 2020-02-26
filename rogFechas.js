@@ -9,7 +9,8 @@ function rogFecha(ano, mes, dia) {
     // o pasar los números de día, mes y año o año y mes
     // o una cadena de caracteres con la fecha aaaa/mm/dd o aaa-mm (Atención al guión)
     var fecha = {}, otraFecha = {};
-	    
+    var laFecha = this;
+    
     this.ano = function() { return fecha.getFullYear() },
     this.mes = function() { return parseInt(fecha.getMonth()) +1 },
     this.dia = function() { return fecha.getDate() },
@@ -27,28 +28,28 @@ function rogFecha(ano, mes, dia) {
     this.toString = fmt;
     this.getDiaSemana = getDiaSemana,
     this.getNbMes = nbMes,
-    this.esHoy = () => this.igual(hoy),
-    this.ayer = function() { return this.resta(1, hoy) },
-    this.esAyer = () => this.igual(this.ayer()),
-    this.manana = function() {return this.suma(1, hoy)},
-    this.esManana = () => this.igual(this.manana()),
+    this.esHoy = () => laFecha.igual(hoy),
+    this.ayer = function() { return laFecha.resta(1, hoy) },
+    this.esAyer = () => laFecha.igual(laFecha.ayer()),
+    this.manana = function() {return laFecha.suma(1, hoy)},
+    this.esManana = () => laFecha.igual(laFecha.manana()),
     this.esLaboral = esFechaLaboral,
     this.lapsoLaboral = lapsoLaboral,
     this.fmt = fmt,
-    this.igual = (ano,mes,dia) => this.fmt() === fmt("",creaFecha(ano, mes, dia)),
-    this.resta = function(nDias, f) {return this.suma(-nDias,f)},
+    this.igual = (ano,mes,dia) => laFecha.fmt() === fmt("",creaFecha(ano, mes, dia)),
+    this.resta = function(nDias, f) {return laFecha.suma(-nDias,f)},
     this.suma = suma,
     this.clase = function() {
         var retorno = "";
         
-        if (this.esHoy()) { retorno = " Hoy futuro"}
+        if (laFecha.esHoy()) { retorno = " Hoy futuro"}
         else {
-            if (this.esManana()) { retorno = " Manana futuro"}
+            if (laFecha.esManana()) { retorno = " Manana futuro"}
             else {
-                if (this.futuro()) { retorno = " futuro"}
+                if (laFecha.futuro()) { retorno = " futuro"}
             }
         }
-        if(!this.esLaboral()) { retorno += " NoLaboral"}
+        if(!laFecha.esLaboral()) { retorno += " NoLaboral"}
         return retorno;
     },
     fecha = creaFecha(ano, mes, dia);
@@ -79,11 +80,14 @@ function rogFecha(ano, mes, dia) {
                 retorno =  f.getFullYear()+"/"+ fmt2((f.getMonth() +1)) +"/"+ fmt2(f.getDate());
                 break;
             case "cool":
-                retorno = getDiaSemana(true,f) + " " + f.getDate() +" de "+ nbMes(f);
+                retorno = getDiaSemana(true,f) + " " + f.getDate() +" de "+ nbMes(null,f);
                 break;
             case "Evento":
                 retorno = getDiaSemana(true,f) +" "+f.getDate()+" "+fmtHora(f.getHours(),f.getMinutes());
                 break;
+            case "serio":
+                retorno = getDiaSemana(null,f) + " " + f.getDate() +" de "+ nbMes(null,f) +" de "+ f.getFullYear();
+                break;                
             case "nbMes":
                 retorno = nbMes(null,f) +" de "+f.getFullYear();
                 break;
@@ -179,7 +183,7 @@ function rogFecha(ano, mes, dia) {
     function suma(nDias, f) {
         // Devuelve una fecha a partir de la actual más o menos @param nDias
         f = f || fecha;
-        return new Date(f.getFullYear(),f.getMonth(),f.getDate() +nDias);
+        return f.setDate(f.getDate() +nDias);
     }
     function lapsoLaboral(hasta, traza) {
         // Devuelve una fecha o un entero según:

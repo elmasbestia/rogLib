@@ -1,0 +1,53 @@
+
+function leeJson(url,fn,fnDebut) {
+    /*
+        Lectura de un archivo json
+        @param url      dirección del archivo a ser leído
+        @param fn       función a ejecutarse con el contenido del archivo
+        @param fnDebut  función a ejecutarse antes de iniciar la lectura
+    */
+    var xobj = new XMLHttpRequest();
+    
+    xobj.overrideMimeType("application/json");
+    xobj.open("GET", url, true);
+    xobj.onerror = (e) => {
+		alert("Error del Navegador!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")");
+	}
+    xobj.onloadstart = fnDebut;
+    xobj.onreadystatechange = () => {
+        console.log("State:",xobj.readyState,"Status:", xobj.status);
+        if (xobj.readyState == 4 && xobj.status == "200") {
+            console.log("Leyó!")
+        }
+    };
+    xobj.onload = () => { fn(JSON.parse(xobj.responseText)) };
+    xobj.send();
+}
+
+function escribeJson(url,fn,fnDebut) {
+    /*
+        escritura de un archivo json
+        @param url      dirección del archivo a ser leído
+        @param fn       función a ejecutarse con el contenido del archivo
+        @param fnDebut  función a ejecutarse antes de iniciar la lectura
+    */
+    var xobj = new XMLHttpRequest();
+    
+    xobj.overrideMimeType("application/json");
+    xobj.open("PUT", url, true);
+    xobj.onerror = (e) => {
+		alert("Error del Navegador!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")")
+	}
+    xobj.onloadstart = fnDebut;
+    xobj.onprogress = (e) => {
+		console.log("Progress: ")
+	}
+    xobj.onreadystatechange = () => {
+        console.log("State:",xobj.readyState,"Status:", xobj.status)
+        if (xobj.readyState == 4 && xobj.status == "200") {
+            console.log("Escribió!")
+        }
+    };
+    xobj.onload = () => { alert("¡Archivo actualizado!") };
+    xobj.send();
+}

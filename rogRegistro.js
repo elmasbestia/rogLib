@@ -159,7 +159,7 @@ class rogCampo {
     }
 }
 
-Class rogRegistro {
+class rogRegistro {
     private id = -1;
     private fino = true;
     private leyo = false;
@@ -305,7 +305,7 @@ Class rogRegistro {
     }
 }
 
-Class rogBDid {
+class rogBDid {
     private nbBD, usr, pwd;
     
     function __construct(nb="", usr="", pwd="") {
@@ -328,7 +328,7 @@ Class rogBDid {
     }
 }
 
-Class rogDatos {
+class rogDatos {
     private   eof = -1;
     private buffer;
     private indice = -1;
@@ -382,7 +382,7 @@ Class rogDatos {
     }
 }
 
-Class rogConexion {
+class rogConexion {
     // Objeto Conexión
     private conexion, fino;
     private datos;

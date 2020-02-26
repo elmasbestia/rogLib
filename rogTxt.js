@@ -1,5 +1,5 @@
 "use strict";
-// Librería para manejo de Textos
+// Objeto para búsqueda de Textos
 // Permite buscar en un arreglo de textos una cadena en particular.
 // Se crea la lista de elementos del arreglo que contienen la cadena
 // Esta lista muestar la línea donde aparece la cadena

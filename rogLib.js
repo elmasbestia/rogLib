@@ -1,25 +1,124 @@
 // Librería de funciones para JS
 // Autor: Rafa Gómez https://rafagomez.neocities.org
 
+// Formatos numéricos    
+const rogFmt = {
+    Moneda: new Intl.NumberFormat('VES', {
+        style: 'decimal',
+        minimumFractionDigits: 2
+    }).format,
+    Ent: new Intl.NumberFormat('VES', {
+        style: 'decimal',
+        minimumFractionDigits: 0
+    }).format,
+    Pc: new Intl.NumberFormat('VES', {
+        style: 'percent',
+        minimumFractionDigits: 2
+    }).format,
+    Cedula: new Intl.NumberFormat('VES', {
+        style: 'decimal',
+        minimumFractionDigits: 0
+    }).format,
+    Tlf: nro => {
+        let _nro = nro.toString();
+        return "(" +_nro.slice(0,3)+") " +_nro.slice(3,6) +" " +_nro.slice(7)
+      },
+    Fecha: f => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
+    Hora: (f = new Date) => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
+    dd: nro => nro > 9 ? nro : "0" +nro,
+    fSerial: (f = new Date()) => f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes())
+}
+
+//              Funciones con DOM
 function objDom(dom) { return typeof dom === "string" ? document.getElementById(dom) : dom }
 
-function objVacio(obj) { return obj.keys().length === 0 }
+function objVacio(obj) { return Object.entries(obj).length === 0 }
+
+function jeto(que,valor) {
+    let obj = {};
+    if(que instanceof Array) que.forEach(x => obj[x] = valor[x]);
+    else obj[que] = valor;
+    return obj;
+}
+
+function entreComillas(texto,simples) { return (simples ? "'" : '"') +texto +(simples ? "'" : '"')}
 
 function valDom(nb) { return document.querySelector("[name="+nb+"]").value }
 
 function rogUrlPrm() {
     var prms = {};
     var partes = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,que,valor) {
-        prms[que] = valor;
+        prms[que] = decodeURIComponent(valor);
     });
     return prms;
 }
 
-function strCompara(que,descendente){
-    var menor = -1, mayor = 1;
-    if (descendente) return (a,b) => (a[que] < b[que]) ? mayor : (a[que] > b[que]) ? menor : 0
-    else return (a,b) => (a[que] < b[que]) ? menor : (a[que] > b[que]) ? mayor : 0
+function spanCant(cant,opcional) {
+  return opcional && !cant ? "" : "<sup><span class='badge'>"+cant+"</span></sup>"
 }
+
+const domTxt = (contenido,que,clase) => "<"+ que +(clase ? " class='" +clase+"'" : "")+">" +contenido +"</"+que+">";
+
+function quitaClase(clase) {
+    let x = document.querySelectorAll("."+clase);
+    x.forEach(x => {x.classList.remove(clase)});
+}
+
+function nivelDe(dom) {
+    let retorno;
+    objDom(dom).classList.forEach(x => { if(x.slice(0,3) === "rog") retorno = x })
+    return retorno;
+}
+
+function rogActiva(opc) {
+    let _dom = objDom(opc);
+    let _nivel = nivelDe(_dom);
+
+    let actual = document.querySelector("."+_nivel+".activa");
+
+    if(actual) actual.classList.remove("activa");
+    if(actual !== _dom) _dom.classList.add("activa");
+}
+
+function strCompara(campo,descendente){
+    // Función que compara dos objetos sobre la base de uno o varios de sus elementos
+    var menor = -1, mayor = 1;
+    var que = campo;
+    const comp1 = (a,b) => (def(a[que]) < def(b[que])) ? menor : (def(a[que]) > def(b[que])) ? mayor : 0;
+    let _campos = desarma(que);
+    function comp(a,b) {
+      let i = 0;
+      do {
+        que = _campos[i];
+        retorno = comp1(a,b);
+      } while (++i < _campos.length && !retorno);
+      return retorno;
+    }
+    function def(x) { return x || "" }
+    if (descendente) {
+        menor = 1;
+        mayor = -1;
+    }
+    if (_campos.length === 1) return comp1;
+    else return comp;
+}
+
+function desarma(lista) {
+    // Crea un arreglo a partir de:
+    // 1. Una lista de palabras separada por coma y un espacio en una cadena de caracteres: "A, B, C"
+    // 2. Un objeto: { A: ..., B: ..., C: ... }
+    // 3. Si @param valores es Un arreglo, devuelve la referencia correspondiente
+
+    let retorno = [];
+    if(lista) {
+        if(lista instanceof Array) retorno = lista;
+        else if(typeof lista === "string") retorno = lista.split(", ");
+        else retorno = Object.keys(lista);
+    }
+    return retorno;
+}
+
+const nbSerial = (prefijo = "") => prefijo +rogFmt.fSerial();
 
 function Extension(nbArchivo){
     var retorno = "";
@@ -28,34 +127,39 @@ function Extension(nbArchivo){
     if (pos >= 0) { retorno = nbArchivo.slice(pos +1) }
     return retorno;
 }
+        
+function nbArch(nbArchivo) {
+    let pos = nbArchivo.lastIndexOf(".");
+    return nbArchivo.slice(0,pos);
+}
 
-function evalRadio(nb) {
-    let retorno;
-
-    Array.from(document.querySelectorAll("[name="+nb+"]"))
-    .map(x => {
-        if(x.checked) retorno = x.value;
-    });
-    return retorno;
+function domVacia(dom) {
+    return !Boolean(objDom(dom).textContent);
 }
 
 function otraVnt(url, ancho=600, alto=800) {
     if (typeof url === "object") url = url.target.url;
     window.open(url, "popup", 'width=' +ancho + 'px,height=' + alto + 'px,left=200,top=200');
     return false;
-    // Uso: <a href="" target="popup" onClick="otraVnt(...)">
 }
 
 function rogAsigna(selector,evento,fn) {
     if(typeof selector === "string") {
         let arreglo = document.querySelectorAll(selector);
         for(let x = 0; x < arreglo.length;x++) {
+            arreglo[x].i = x;
             arreglo[x][evento] = fn;
+            arreglo[x].style.cursor = "pointer";
         }
     } else selector[evento] = fn;
 }
 
-function rogPrm(prm) { return (typeof prm == "object") ? (prm.target.textContent ? prm.target.textContent : prm.target.value) : prm }
+function rogPrm(prm) {
+    return prm.target ?
+        (prm.target.value === undefined ?
+        prm.target.textContent : prm.target.value)
+    : prm
+}
 
 function btnDefault(dom,boton) {
 	let btn = objDom(boton);
@@ -66,102 +170,26 @@ function btnDefault(dom,boton) {
 
 function modCss(dom,reglas) {
 	let css = objDom(dom).style;
-	let asignaCss = x => { css[x[0]] = x[1]};
+	let asignaCss = x => { css[x[0]] = x[1] };
 	for (let regla in reglas) {
 		if(reglas[regla] instanceof Array ) {
 			reglas[regla].forEach(asignaCss);
 		} else {
 			css[regla] = reglas[regla];
 		}
-		
 	}
 }
 
-function clsAwesome() {
-    // fa-li para elementos de lista
-    return {
-        espera:     'fa fa-spinner fa-spin',
-        bsq:        'fa fa-search',
-        guarda:     'fa fa-save',
-        vb:         'fa fa-check',
-        pdf:        'fa fa-file-pdf',
-        video:      'fa fa-film',           // file-video
-        imagen:     'fa fa-images',
-        info:       'fa fa-info-circle',
-        geo:        'fa fa-map-marker-alt',
-        tlf:        'fa fa-phone',
-        agrega:     'fa fa-plus-circle',
-        modificar:  'fa fa-edit',
-        eliminar:   'fa fa-minus-circle',
-        boleto:     'fa fa-ticket',
-        cerrar:     'fa fa-times-circle',
-        agenda:     'fa fa-address-book',
-        ficha:      'fa fa-address-card',
-        prohibido:  'fa fa-ban',
-        aviso:      'fa fa-bell',
-        cumple:     'fa fa-birthday-cake',
-        marca:      'fa fa-bookmark',
-        calendario: 'fa fa-calendar-alt',
-        fotos:      'fa fa-camera',
-        anterior:   'fa fa-caret-left',
-        siguiente:  'fa fa-caret-right',
-        graf: {
-            Barras: 'fa fa-chart-bar',
-            Lineas: 'fa fa-chart-line',
-            Torta:  'fa fa-char-pie'
-        },
-        chamo:      'fa fa-child',
-        engranes:   'fa fa-cogs',
-        comentario: 'fa fa-comment', // sticky-note
-        disco:      'fa fa-compact-disk',
-        dado: [
-                    'fa fa-blank',
-                    'fa fa-dice-one',
-                    'fa fa-dice-two',
-                    'fa fa-dice-three',
-                    'fa fa-dice-four',
-                    'fa fa-dice-five',
-                    'fa fa-dice-six'
-        ],
-        puerta: {
-            cerrada: 'fa fa-door-closed',
-            abierta: 'fa fa-door-open',
-        },
-        correo:      'fa fa-envelope',
-        exclamacion: 'fa fa-exclamation', //certificate (For favorite)
-        carpeta: {
-            cerrada: 'fa fa-folder',
-            abierta: 'fa fa-folder-open'
-        },
-        chequear: {
-            si: "fa fa-check-square",
-            no: "fa fa-square"
-        }
-    }
-}
-
-function spanAwesome(que) {
-    return "<span class='" +Awesome[que] +"'></span>";
-}
-		
 function accede(accion,url,fn,datos) {
-    var xobj = new XMLHttpRequest();
-
-	function xmlEstado(estado) {
-		switch (estado) {
-			case 0: return "No inicializado";	// request not initialized
-			case 1: return "Conectado"; 		// server connection established
-			case 2: return "Recibido"; 			// request received
-			case 3: return "Procesando";		// processing request
-			case 4: return "Listo";				// request finished and response is ready
-		}
-	}
-	
+    let xobj = new XMLHttpRequest();
+    let xmlEstado = ["No inicializado", "Conectado", "Recibido", "Procesando", "Listo"];
+		
 	function msjErrorXML(e) {
-		alert("¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
+		alert(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
 	}
      
-//			if (datos) datos = JSON.stringify(datos);
+    xobj.accion = accion;
+    xobj.url    = url;
      
     xobj.overrideMimeType("application/json");
     xobj.withCredentials = true;
@@ -169,7 +197,7 @@ function accede(accion,url,fn,datos) {
     xobj.setRequestHeader('Content-type','application/json; charset=utf-8');
     xobj.onerror = msjErrorXML;
 //            xobj.onprogress = (e) => { console.log("Progress: ", e) }
-    xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado(xobj.readyState)," (", xobj.status,")") };
+    xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")") };
     xobj.onload = () => {
 		if (xobj.status < 400) {
 			if(accion === "GET") {
@@ -184,107 +212,6 @@ function accede(accion,url,fn,datos) {
     xobj.send(JSON.stringify(datos));
 }
 
-function leeJson(url,fn,fnDebut) {
-    /*
-        Lectura de un archivo json
-        @param url      dirección del archivo a ser leído
-        @param fn       función a ejecutarse con el contenido del archivo
-        @param fnDebut  función a ejecutarse antes de iniciar la lectura
-    */
-    var xobj = new XMLHttpRequest();
-    
-    xobj.overrideMimeType("application/json");
-    xobj.open("GET", url, true);
-    xobj.onerror = (e) => {
-		alert("Error del Navegador!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")");
-	}
-    xobj.onloadstart = fnDebut;
-    xobj.onreadystatechange = () => {
-        console.log("State:",xobj.readyState,"Status:", xobj.status);
-        if (xobj.readyState == 4 && xobj.status == "200") {
-            console.log("Leyó!")
-        }
-    };
-    xobj.onload = () => { fn(JSON.parse(xobj.responseText)) };
-    xobj.send();
-}
-
-function escribeJson(url,fn,fnDebut) {
-    /*
-        Lectura de un archivo json
-        @param url      dirección del archivo a ser leído
-        @param fn       función a ejecutarse con el contenido del archivo
-        @param fnDebut  función a ejecutarse antes de iniciar la lectura
-    */
-    var xobj = new XMLHttpRequest();
-    
-    xobj.overrideMimeType("application/json");
-    xobj.open("PUT", url, true);
-    xobj.onerror = (e) => {
-		alert("Error del Navegador!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")")
-	}
-    xobj.onloadstart = fnDebut;
-    xobj.onprogress = (e) => {
-		console.log("Progress: ")
-	}
-    xobj.onreadystatechange = () => {
-        console.log("State:",xobj.readyState,"Status:", xobj.status)
-        if (xobj.readyState == 4 && xobj.status == "200") {
-            console.log("Escribió!")
-        }
-    };
-    xobj.onload = () => { alert("¡Archivo actualizado!") };
-    xobj.send();
-}
-
-function valPorOmision(campo) {
-	let retorno = "";
-	if(campo.inicial) {
-		retorno = campo.inicial;
-	} else {
-		if(campo.tipo) {
-			if(campo.tipo === "checkbox") retorno = false;
-		}
-	}
-	return retorno;
-}
-
-function moveCorresponding(de,a,Stru) {
-    var elementos = objDom(a).elements;
-    if(elementos) {
-        let valores = de;
-
-        let n = elementos.length;
-        for (let i = 0; i < n ;i++) {
-            let campo = elementos[i]
-            let nbCampo = campo.name;
-            if (nbCampo) {
-                if(campo.type === "radio") {
-                    if(valores[nbCampo] !== undefined) {
-                        if(campo.value === valores[nbCampo]) campo.checked = true;
-                    } else {
-                        if(Stru[nbCampo] !== undefined)
-                            campo.value = valPorOmision(Stru[nbCampo])
-                    }
-                }
-                else {
-                    if(valores[nbCampo] !== undefined) campo.value = valores[nbCampo];
-                    else if(Stru[nbCampo] !== undefined) if(campo.value === valPorOmision(Stru[nbCampo]))  campo.checked = true;
-                }
-            }
-        }
-    } else {
-        elementos = objDom(de).elements;
-        let n = elementos.length;
-        let valores = a;
-        for (let i = 0; i < n ;i++) {
-            let nbCampo = elementos[i].name;
-            if (nbCampo)
-                if(valores[nbCampo] !== undefined) valores[nbCampo] = elementos[i].value;
-        };
-    }
-}
-
 function regVacio(Stru) {
 	let retorno = {};
 	for(x in Stru) {
@@ -295,47 +222,72 @@ function regVacio(Stru) {
 
 function mstModal(dom) {
     objDom(dom).style.display = "block";
+    rogAsigna(".rogCierraModal","onclick",cierraModal);
 }
 
-function cierraModal(e) { this.parentElement.parentElement.style.display = "none" }
+function rogAncetre(dom,clasePa) {
+    let pa = objDom(dom);
+    while (!pa.classList.contains(clasePa)) { pa = pa.parentElement}
+    return pa;
+}
 
-function creaFormulario(Formulario, Stru) {
-	formulario.innerHTML = "";
-    for(let x in Stru) {
-		let nuevo = document.createElement("LABEL");
-		nuevo.htmlFor = x;
-		nuevo.textContent = x;
-		nuevo.title = "";
-		
-		formulario.appendChild(nuevo);
-		
-		if(Stru[x].tipo === "combo") {
-			nuevo = document.createElement("SELECT")
-			nuevo.id = "cmb" +x
-		} else {
-			nuevo = document.createElement("INPUT");
-			if(Stru[x].tipo) {
-				if(Stru[x].tipo !== "auto") nuevo.type = Stru[x].tipo;
-			}
-		}
-		nuevo.name = x;
-        if(Stru[x].obligatorio) nuevo.required = true;
-		
-		formulario.appendChild(nuevo);
-		formulario.appendChild(document.createElement("BR"));
-	}
+function cierraModal(e) {
+    rogAncetre(e.target,"rogModal").style.display = "none";
+}
+
+function domImg(src,caption,imgProps,figProps) {
+    function txtProps(props) {
+        let retorno = "";
+        if(props) {
+            for(x in props) {
+                retorno += " " +x +"= '" +props[x] +"'";
+            }
+        }
+        return retorno;
+    }
+    
+    let retorno = "<figure";
+    retorno += txtProps(figProps);
+    retorno += "><img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg") +"' height= 90%"
+    retorno += txtProps(imgProps);
+    retorno += "><figcaption>"+caption+"</figcaption></figure>";
+    return retorno;
 }
 
 function tabTitulos(campos) {
-    let retorno = "<thead><tr>";
-    campos.forEach((x) => { retorno += "<th>"+x+"</th>"; })
-    return retorno + "</tr></thead>"
+    return domTxt(
+        domTxt(campos.reduce((linea,valor, i) => linea += domTxt(valor,"th"),"")
+    ,"tr")
+    , "thead");
 }
 
 function creaCombo(datos,dom,item) {
-	let cmb = objDom(dom);
-			
-	datos.forEach(x => { cmb.appendChild(creaOpcion(item ? x[item] : x)) });
+    // Crea el dom de un combo cargado con 
+    // @param datos en el @param dom
+    // Si se omite @param dom se devuelve el codigo HTML correspondiente
+    // @param item puede ser:
+    // 1. el nombre de un elemento en datos
+    // 2. un Objeto { valor:, texto } con el nombre de los elementos a usar
+    // 3. Si se omite, es el valor en datos
+
+    let valor = x => x;
+    let texto = x => x;
+    if(item) {
+        if(typeof item === "string") {
+            valor = x => x[item];
+            texto = x => x[item];
+        } else {
+            valor = item.valor ? x => x[item.valor] : (x,i) => i;
+            texto = x => x[item.texto]; 
+        }
+    }
+    
+    let _combo = datos.reduce((combo,x)=> combo +="<option value='"+valor(x)+"'>"+texto(x)+"</option>","<select>")+"</select>";
+//+spanCant(x.cant,true)
+    if(dom) {
+        let _dom = objDom(dom);
+        _dom.innerHTML = _combo;
+    } else return _combo;
 }
 
 function creaOpcion(item) {
@@ -350,6 +302,12 @@ function creaOpcion(item) {
 	}
 	return opcion;
 }
+          
+function domLinea (valores,clsLinea,clsCelda,fmts) {
+    return domTxt(valores.reduce((linea,valor, i) => linea += domCelda(valor,clsCelda === i ? 'rogId': null),""), "tr",clsLinea);
+}
+
+function domCelda(valor,clase) { return domTxt(valor || "","td",clase)  }
 
 function mstLista(datos,dom,caption = "", campos = null,fn = null,nbId="") {
 	let donde = objDom(dom);
@@ -363,73 +321,60 @@ function mstLista(datos,dom,caption = "", campos = null,fn = null,nbId="") {
     }
 */
 
-    if(datos) {
+    if(datos.length) {
+        let indice = (campos && campos.texto) ? (e,i) => e[campos.valor] : (e,i) => i);
+        let texto  = (campos && campos.texto) ? e => e[campos.texto] : (e => e);
+        let title  = (campos && campos.title) || null;
+      
+        donde.innerHTML = "";
+        
+        if(caption) {
+            let tit = document.createElement("H3");
+            tit.className = "rogTitLista";
+            tit.innerHTML = caption+spanCant(datos.length);
+            donde.appendChild(tit);
+        }
+                        
         let lista = document.createElement("OL");
-        //lista.style.list-style-type = "none";
         donde.appendChild(lista);
 
         datos.forEach((e,i) => {
             let li = document.createElement("LI");
             li.className = clase;
-            li.value = i;
-            li.textContent = e;
-            if(fn) {
-                li.onclick = fn;
-                li.style.cursor = "pointer";
+            li.value = indice(e,i);
+            if(typeof e === "string") li.textContent = e;
+            else {
+                li.textContent = texto(e); 
+                if(title) li.title = e[title];
             }
+            if(fn) rogAsigna(li,"onclick",fn);
             lista.appendChild(li);
         });
     } else {
-        donde.innerHTML = "<h3>No hay " +caption+ "</h3>"
+        donde.innerHTML = "<h3 class='rogTitLista'>No hay " +(caption || "datos")+ "</h3>"
     }
 }
 
 function mstTabla(datos,dom,caption = "",campos = null,Fn = null,nbId="") {
 	let donde = objDom(dom);
-
-	function celda(valor,nb) { return "<td"+ (nb === nbId ? " class='rogId'"	: "")+">" + (valor || "") +"</td>" }
     
-    if(datos) {
+    if(datos.length) {
         let tabla = "<table><caption><h3>" +caption+ "<sup><span class='badge'>"+datos.length+"</span></sup></h3></caption>";
-        let titulos, linea;
+        let titulos;
+        let _campos = desarma(campos || datos[0]);
+        let fnId = _campos.indexOf(nbId);
 
         datos.forEach(e => {
             if (!titulos) {
-                titulos = "<thead><tr>";
-                if(campos) {
-                    if (typeof campos === "string") campos = campos.split(",");
-                } else {
-                    campos = Object.keys(datos[0]);
-                }
-                campos.forEach((x) => {
-                    titulos += "<th>"+x+"</th>";
-                })
-                linea = (x,campos) => {
-                    campos.forEach((nbCampo) => {
-                        tabla += celda(x[nbCampo],nbCampo)
-                    })
-                }
-
-                titulos += "</tr></thead>";
+                titulos = tabTitulos(_campos)
                 tabla += titulos+"<tbody>";
             }
-            tabla +="<tr>";
-            linea (e,campos);
-            tabla +="</tr>";
+            tabla += domLinea(_campos.map(x => e[x]),null,fnId);
         });
         tabla += "</tbody></table>";
 
         donde.innerHTML = tabla;
-        if (Fn) {
-            let i = 0;
-            let rogIds = document.querySelectorAll("#"+donde.id+" .rogId");
-            let nRogIds = rogIds.length;
-            for(; i < nRogIds; i++ ) {
-                rogIds[i].i = i;
-                rogIds[i].onclick = Fn;
-                rogIds[i].style.cursor = "pointer";
-            }
-        }
+        if (Fn) rogAsigna("#"+donde.id+" .rogId","onclick",Fn);
     } else {
         donde.innerHTML = "<h3>No hay " +caption+ "</h3>"
     }

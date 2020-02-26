@@ -1,6 +1,3 @@
-// Objeto Buscador
-// Rafa Gómez rafagomez.neocities.org
-
 function rogBsq(dom, opciones, fn) {
 	const bsq = document.createElement("DIV");
 		
@@ -9,10 +6,20 @@ function rogBsq(dom, opciones, fn) {
 	const opcBsq = creaOpc(opciones);
 	
 	function llamaBsq() {
-		fn(slfBsq.que(), slfBsq.valor());
+		fn(...analValor(slfBsq.que(), slfBsq.valor()));
 	}
+    
+    function analValor(parm,texto) {
+        let pos = texto.indexOf("=");
+        if(pos > -1) {
+            let que = texto.slice(0,pos).trim();
+            let valor = texto.slice(pos+1).trim();
 
-    function divEspera() {
+            return [que,valor];
+        } else return [parm,texto];
+    }
+
+           function divEspera() {
         retorno = document.createElement("DIV");
         retorno.innerHTML = "<i class='fa fa-spinner fa-spin'></i>";
         retorno.innerHTML += "<span id='txtEspera'></span>";
@@ -20,7 +27,7 @@ function rogBsq(dom, opciones, fn) {
         retorno.id ="divEspera";
         modCss(retorno, {
             border: "solid 1px black",
-            padding: "10px",
+            padding: "15px",
             display: "none"
         });
         return retorno;
@@ -65,49 +72,36 @@ function rogBsq(dom, opciones, fn) {
 		retorno.className = "rogBtn";
 		retorno.onclick= llamaBsq;
 		retorno.innerHTML = "<i class='fa fa-search'></i>";
-		retorno.onmouseover = () => { bsq.style.display = "block"; };
-        modCss(retorno, { width: "50px", height: "50px", border: "none",
-            otros: [["font-size", "10pt"],
-                    ["padding-left", "35px"],
-                    ["-webkit-border-radius", "5px"],
-                    ["-moz-border-radius","5px"],
-                    ["border-radius", "5px"],
-                    ["-webkit-transition", "width .55s ease"],
-                    ["-moz-transition", "width .55s ease"],
-                    ["-ms-transition", "width .55s ease"],
-                    ["-o-transition", "width .55s ease"],
-                    ["transition", "width .55s ease"]
-            ]
-        });
+		retorno.onmouseover = () => { bsq.style.display = "flex"; };
 		return retorno;
 	}
 	
 	function creaDom(dom) {
 		bsq.appendChild(opcBsq);
 		bsq.appendChild(valBsq);
-		bsq.style= "width= 100%; height: 100%; alignItems: flex-end";
+
 		bsq.style.display = "none";
+		bsq.className = "rogBtn";
 		
 		let cnt = document.createElement("DIV");
 		cnt.appendChild(bsq);
 		cnt.appendChild(btnBsq);
-		cnt.style = "width: 300px; height: 30px; display: flex; alignItems: flex-end";
-		cnt.class = "rogBtn";
+		cnt.style = "display: flex; alignItems: stretch";
 
 		let vnt = objDom(dom);
 	    vnt.appendChild(divEspera());   // Para mensajes de Espera
 		vnt.appendChild(cnt);
 		modCss(vnt,
-		    { height: "50px", display: "flex",
+		    { display: "flex", // height: "50px", 
 		    otros: [
-		        ["justify-content", "space-between"], ["align-items", "stretch"]
+		        ["justify-content", "flex-end"], ["align-items", "stretch"]
 		    ]}
 		);
 	}
 
 	this.query = () => ({ que: this.que(), valor: this.valor() });
-	this.que = () => opcBsq.value;
-	this.valor = () => valBsq.value;
+	this.que = (nbCampo) => nbCampo ? opcBsq.value = nbCampo : opcBsq.value;
+	this.valor = (valor) => valor ? valBsq.value = valor : valBsq.value;
 	this.Espera = (msj) => {
         let div = document.getElementById("divEspera");
         if(msj) {

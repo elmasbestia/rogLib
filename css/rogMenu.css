@@ -1,0 +1,128 @@
+* {
+  --menuOpc: #c3c3c3;
+  --menuSub: #d3d3d3;
+  --menuAct: #f3f3f3;
+  --menuSubAct: #ffffff;
+}
+ /* Menú Horizontal */
+.rogMenu {
+  overflow: hidden;
+  background-color: #333;
+}
+
+/* Submenúes */
+.rogMenu > * {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  list-style-type: none;
+}
+
+/* Señala el submenú actual */
+.rogSubmenu:hover {
+  background-color: black;
+}
+
+/* Opciones de Submenú */
+.rogOpciones {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.rogOpciones a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.rogOpcion {
+    color: black;
+    text-align: left;
+}
+
+/* Señala la opción actual */
+.rogOpcion:hover {
+  background-color: #ddd;
+  border-bottom-width: thin;
+}
+
+/* Muestra las opciones del submenú */
+.rogSubmenu:hover .rogOpciones {
+  display: block;
+} 
+
+.rogMenuIcono {
+    display: none;
+}
+
+/* Menú "respondivo" */
+@media screen and (max-width: 600px) {
+  .rogSubmenu {display: none;}
+  .rogMenuIcono {
+    float: right;
+    display: block;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .rogMenu {position: relative;}
+  .rogMenuIcono {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .rogMenuResp .rogSubmenu {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+}
+
+ /* Menú Vertical*/
+.rogMenuVrt {
+    background-color: var(--objFondo);
+    max-width: 25%;
+}
+.rogOpcVrt {
+    width: 100%;
+    list-style-type: none;
+    padding: 1em;
+    background-color: var(--menuOpc);
+    border-bottom: 1px solid #ccc;
+}
+.rogSubVrt {
+    display: none;
+    background-color: var(--menuSub);
+    color: #444;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+    text-decoration:     
+    border: none;
+    outline: none;
+    transition: 0.4s;
+}
+.rogSubOpcVrt {}
+.rogSubOpcVrt.activa, .rogSubOpcVrt:hover {
+  background: var(--menuSubAct);  
+}
+
+.rogOpcVrt.activa, .rogOpcVrt:hover {
+    background-color: var(--menuAct);
+    color: darkslategray
+}
+
+.activa + .rogSubVrt {
+    display: block;
+}
