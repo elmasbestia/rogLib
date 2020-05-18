@@ -1,0 +1,53 @@
+import {
+	GraphQLSchema,
+	GraphQLObjectType,
+	GrapQLString,
+	GrapQLList
+} from 'grapql';
+
+import fetch from 'node-fetch'
+
+https://www.youtube.com/watch?v=H8YnVk2vhzg
+
+const BASE_URL = 'http://localhost:8000'
+
+function getPersonByURL(relativeURL) {
+	return fetch('${BASE_URL}${relativeURL}')
+	.then(res => res.json())
+	.then(json => json.person)
+}
+
+const PersonType = new GrapQLObjectType({
+	fields: () => ({
+		firstName: {
+			type: GrapQLString,
+			resolve: (person) => person.first_name
+		},
+		lastName: {
+			type: GrapQLString,
+			resolve: (person) => person.last_name
+		},
+		email: { type: GrapQLString },
+		username: { type: GrapQLString },
+		id: { type: GrapQLString },
+		friends: new GrapQLList(PersonType), 
+			resolve: () =>
+	})
+})
+
+
+
+const QueryType = new GraphQLObjectType({
+	name: 'Query',
+	description: '...',
+
+	fields: () => ({
+		person: {
+			type: PersonType,
+			args: {
+				id: { type: GraphQLString }
+			},
+			resolve: (root,args) => fetch({'${BASE_URL}/people/${args.id}/')
+			.then(res =>res.json())
+			.then(json => json.person)
+		}

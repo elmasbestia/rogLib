@@ -1,0 +1,88 @@
+  color: #87629a;
+  background: #136c72;
+  background-color: #38cfd9;
+  background-color: #23424a;
+
+/* HSL */
+$color1: hsla(30%, 4%, 63%, 1);
+$color2: hsla(201%, 34%, 58%, 1);
+$color3: hsla(33%, 82%, 84%, 1);
+$color4: hsla(59%, 20%, 100%, 1);
+$color5: hsla(254%, 33%, 89%, 1);
+
+/* RGB */
+$color1: rgba(161, 158, 155, 1);
+$color2: rgba(98, 131, 149, 1);
+$color3: rgba(215, 134, 38, 1);
+$color4: rgba(255, 254, 203, 1);
+$color5: rgba(170, 153, 228, 1);
+
+/* HEX */
+$gris: #a19e9bff;
+$azul: #628395ff;
+$arena: #d78626ff;
+$crema: #fffecbff;
+$morado: #aa99e4ff;
+
+/* GRADIENT */
+$gradient-top: linear-gradient(0deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-right: linear-gradient(90deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-bottom: linear-gradient(180deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-left: linear-gradient(270deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-top-right: linear-gradient(45deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-bottom-right: linear-gradient(135deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-top-left: linear-gradient(225deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-bottom-left: linear-gradient(315deg, #a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+$gradient-radial: radial-gradient(#a19e9bff, #628395ff, #d78626ff, #fffecbff, #aa99e4ff);
+
+
+Combo#1 de Coco/Waraira 45.38
+
+4KG +1Gratis de Coco/Factu Market 24.03
+
+        :root {
+            --clrEnfasis:   rgb(164, 164, 164, 0.5);
+            --clrMenu:      rgb(40, 164, 164);
+			--clrFondo:     rgb(164, 164, 164, 0.5);
+			--clrTxt:       black;
+			--cltTxtEnh:    orange;
+			--clrFotoMarco: white;
+			--clrFndLst:    #f9f9f9;
+			--clrTxtLst:    black;
+        }
+
+
+10 "color"
+ 1. background-color: var(--clrEnfasis);
+ 2. color: orange;  
+ 3. background-color: var(--clrMenu);
+ 4. background-color: var(--clrEnfasis); li:hover
+ 5. color: white; li:hover
+ 6. color: orange; txtEnh
+ 7. background-color: transparent;
+    box-shadow: 2px 4px orange; txtEnh
+ 8. background-color: white; (fotoMarco)
+ 9. background-color: #f9f9f9; lista
+    box-shadow: 0px 8px 16px 0px rgba(10, 10, 10, 0.2); lista
+10.              color: black; listas
+
+	--clrEnfasis:   rgb(164, 164, 164, 0.5);
+	--clrNav:       rgb(40, 164, 164);
+	--clrFondo:     rgb(164, 164, 164, 0.5);
+	--clrTxt:       black;
+	--cltTxtEnh:    orange;
+	--clrTxtChx:    white;
+	--clrFndChx:    transparent;
+	--clrFotoMarco: white;
+	--clrFndLst:    #f9f9f9;
+	--clrTxtLst:    black;
+$gris: #a19e9bff;
+$azul: #628395ff;
+$arena: #d78626ff;
+$crema: #fffecbff;
+$morado: #aa99e4ff;
+
+5a311d Choco
+d87e30 arena
+fee89d crema
+bc071a

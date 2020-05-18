@@ -1,9 +1,7 @@
 /* Estilos para los formularios creados con la Librería rogLib */
 
 body {
-    --objFondo: #0047b3;
-    --objLetra: white;
-    --colorDestacado: silver;
+	margin: 0;
 
     box-sizing: border-box;
     font-family: 'Raleway', sans-serif;
@@ -14,23 +12,12 @@ body {
     align-content: space-between;
 }
 
-    footer {
-        display: flex;
-        font-size: small;
-        height: 80px;
-        border: 0;
-        box-shadow: 0 10px 10px -10px #8c8c8c inset;
-        padding: 5px;
-        Top: 10px;
-        justify-content: flex-end;
-    }
-
-	label {
-		font-style: oblique;
-		font-weight: bold;
-		width: 100px;
-		float: left;
-	}
+label {
+	font-style: oblique;
+	font-weight: bold;
+	width: 100px;
+	float: left;
+}
 
     textarea {
         vertical-align: top;
@@ -45,14 +32,13 @@ img {
 	}
 
 	.rogBtn {
-		background-color: var(--objFondo);
-		color: var(--objLetra);
+		background-color: var(--clrFndBtn);
+		color: var(--clrTxtBtn);
 		border: none;
 		padding: 10px 20px;
 		text-align: center;
 		text-decoration: none;
 		display: inline-block;
-		font-size: 125%;
 		margin: 3px 2px;
 		cursor: pointer;
 	}
@@ -67,10 +53,6 @@ img {
 
 .rogIdMenu {
     height: 3em;
-}
-
-.rogFirma {
-    height: 2em;
 }
 
 	.buscable {
@@ -148,3 +130,79 @@ img {
 		text-decoration: none;
 		cursor: pointer;
 	}
+
+	/* Footer y Firma */
+footer {
+	display: flex;
+	font-size: small;
+	height: 2em;
+	border: 0;
+	box-shadow: 0 10px 10px -10px #8c8c8c inset;
+	padding: 5px;
+	top: 10px;
+	justify-content: flex-end;
+}
+
+footer .creditos {
+	height: 80%;
+}
+
+footer .logo {
+	height: 80%;
+}
+.rogFirma {
+	background-color: transparent;
+}
+
+.rogFirma-enlaces {
+  background-color: #004d66;
+  background-repeat: no-repeat;
+  color: silver;
+  text-shadow: .1rem .1rem black;
+  position: fixed;
+}
+
+.rogFirma-enlace {
+  border: 2px solid currentcolor;
+  border-radius: 25px;
+
+  color: silver;
+  font-size: 1.5rem;
+  display: block;
+  padding : 15px;
+  margin: auto auto;
+
+  -webkit-transform: rotateZ(45deg);
+          transform: rotateZ(45deg);
+}
+
+.rogFirma-enlace a {
+  color: currentcolor;
+}
+
+.rogLogo:hover {
+  -ms-transform: scaleY(1.5); /* IE 9 */
+  transform: scale(1.5);
+}
+
+.rogFirma:hover .rogFirma-enlaces {
+  display: block;
+
+  bottom:   100px;
+  right:     10px;
+}
+
+.rogFirma:hover .rogFirma-enlaces .rogFirma-enlace {
+  transition: all 2s ease-in;
+
+  -webkit-transform: rotateZ(0deg);
+          transform: rotateZ(0deg);
+}
+
+.rogCapa2 {
+  transition-delay: .5s;
+}
+
+.rogCapa3 {
+  transition-delay: 1s;
+}

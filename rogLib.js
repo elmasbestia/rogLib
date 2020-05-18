@@ -15,18 +15,18 @@ const rogFmt = {
         style: 'percent',
         minimumFractionDigits: 2
     }).format,
-    Cedula: new Intl.NumberFormat('VES', {
-        style: 'decimal',
-        minimumFractionDigits: 0
-    }).format,
     Tlf: nro => {
         let _nro = nro.toString();
         return "(" +_nro.slice(0,3)+") " +_nro.slice(3,6) +" " +_nro.slice(7)
       },
-    Fecha: f => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
-    Hora: (f = new Date) => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
-    dd: nro => nro > 9 ? nro : "0" +nro,
+    Fecha: (f = new Date()) => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
+    Hora: (f = new Date()) => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
+    dd: nro => (nro > 9 ? "" : "0") + nro,
     fSerial: (f = new Date()) => f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes())
+}
+
+function escogeUna(a) {
+	return a[Math.floor(Math.random() *a.length)]
 }
 
 //              Funciones con DOM
@@ -57,7 +57,13 @@ function spanCant(cant,opcional) {
   return opcional && !cant ? "" : "<sup><span class='badge'>"+cant+"</span></sup>"
 }
 
-const domTxt = (contenido,que,clase) => "<"+ que +(clase ? " class='" +clase+"'" : "")+">" +contenido +"</"+que+">";
+const domTxt = (contenido,que,clase,opcs) => "<"+ que +(clase ? " class='" +clase+"'" : "")+creaOpcs(opcs)+">" +contenido +"</"+que+">";
+
+function creaOpcs(opcs) {
+    let retorno = "";
+    for(x in opcs) { retorno = ` ${x}='${opcs[x]}'`}
+    return retorno;
+}
 
 function quitaClase(clase) {
     let x = document.querySelectorAll("."+clase);
@@ -71,13 +77,12 @@ function nivelDe(dom) {
 }
 
 function rogActiva(opc) {
-    let _dom = objDom(opc);
-    let _nivel = nivelDe(_dom);
+  let _nivel = nivelDe(opc);
 
-    let actual = document.querySelector("."+_nivel+".activa");
+  let actual = document.querySelector("."+_nivel+".activa");
 
-    if(actual) actual.classList.remove("activa");
-    if(actual !== _dom) _dom.classList.add("activa");
+  if(actual) actual.classList.remove("activa");
+  if(actual !== opc) opc.classList.add("activa");
 }
 
 function strCompara(campo,descendente){
@@ -139,7 +144,7 @@ function domVacia(dom) {
 
 function otraVnt(url, ancho=600, alto=800) {
     if (typeof url === "object") url = url.target.url;
-    window.open(url, "popup", 'width=' +ancho + 'px,height=' + alto + 'px,left=200,top=200');
+    window.open(url, "_blank", 'width=' +ancho + 'px,height=' + alto + 'px,left=200,top=200');
     return false;
 }
 
@@ -161,10 +166,11 @@ function rogPrm(prm) {
     : prm
 }
 
-function btnDefault(dom,boton) {
+function btnDefault(dom,boton,fn) {
 	let btn = objDom(boton);
-	let obj = objDom(dom);
-	obj.oninput = (e) => { btn.disabled = !Boolean(e.target.value) };
+    let obj = objDom(dom);
+    if(!fn) fn = Boolean;
+	obj.oninput = (e) => { btn.disabled = !fn(e.target.value) };
 	obj.onkeypress = (e) => { if(e.keyCode === 13) btn.click() };
 }
 
@@ -183,7 +189,7 @@ function modCss(dom,reglas) {
 function accede(accion,url,fn,datos) {
     let xobj = new XMLHttpRequest();
     let xmlEstado = ["No inicializado", "Conectado", "Recibido", "Procesando", "Listo"];
-		
+	
 	function msjErrorXML(e) {
 		alert(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
 	}
@@ -232,7 +238,7 @@ function rogAncetre(dom,clasePa) {
 }
 
 function cierraModal(e) {
-    rogAncetre(e.target,"rogModal").style.display = "none";
+    rogAncetre("rogModal").style.display = "none";
 }
 
 function domImg(src,caption,imgProps,figProps) {
@@ -277,7 +283,7 @@ function creaCombo(datos,dom,item) {
             valor = x => x[item];
             texto = x => x[item];
         } else {
-            valor = item.valor ? x => x[item.valor] : (x,i) => i;
+            valor = x => x[item.valor];
             texto = x => x[item.texto]; 
         }
     }
@@ -288,6 +294,7 @@ function creaCombo(datos,dom,item) {
         let _dom = objDom(dom);
         _dom.innerHTML = _combo;
     } else return _combo;
+
 }
 
 function creaOpcion(item) {
@@ -322,9 +329,9 @@ function mstLista(datos,dom,caption = "", campos = null,fn = null,nbId="") {
 */
 
     if(datos.length) {
-        let indice = (campos && campos.texto) ? (e,i) => e[campos.valor] : (e,i) => i);
-        let texto  = (campos && campos.texto) ? e => e[campos.texto] : (e => e);
-        let title  = (campos && campos.title) || null;
+        let indice = campos ? (campos.valor ? (e,i) => e[campos.valor] : (e,i) => i) : (e,i) => i;
+        let texto  = campos ? (campos.texto ? e => e[campos.texto] : e => e) :  (e => e);
+        let title  = campos ? campos.title || null : null;
       
         donde.innerHTML = "";
         
