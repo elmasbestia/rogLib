@@ -8,18 +8,18 @@ function rogImagen(nb, alt, caption, enlace, titulo) {
     this.titulo = titulo;
 }
 
-function rogDiapos(dom,directorio,imagenes) {
+function rogDiapos(dom,directorio,imagenes,intervalo = 3500) {
     // Crea un carrusel de imágenes a partir de:
     // @param dom           Elemento donde se mostrarán las imágenes
     // @param directorio    Dirección de las fotos
-    // @param imagenes      Arreglo de imégenes con:
+    // @param imagenes      Arreglo de imágenes con:
     //          nb          nombre de la imagen
     //          alt         nombre alternativo (img)
     //          caption     título de la imágen
     //          enlace      Hipervinculo
     //          titulo      Texto que aparece al pasar sobre la imagen
     
-    var Intervalo = 3500;
+    var Intervalo = intervalo;
     var diapos = [];
     var base = typeof dom === "string" ? document.getElementById(dom) : dom;
     var indice = 0;
@@ -41,7 +41,12 @@ function rogDiapos(dom,directorio,imagenes) {
         function preparaDiapo(imagen) {
             var fig = document.createElement("FIGURE");
             var img = document.createElement("IMG");
-            var figcaption = document.createElement("FIGCAPTION");
+			
+			if(imagen.caption) {
+				var figcaption = document.createElement("FIGCAPTION");
+				figcaption.appendChild(document.createTextNode(imagen.caption));
+				fig.appendChild(figcaption);
+			}
 
             img.src = directorio + imagen.nb;
             img.alt = imagen.alt || imagen.nb;
@@ -57,8 +62,6 @@ function rogDiapos(dom,directorio,imagenes) {
                 fig.appendChild(img);
             }
 
-            figcaption.appendChild(document.createTextNode(imagen.caption));
-            fig.appendChild(figcaption);
             fig.style.display = "none";
             fig.className = "rogDiapo";
             

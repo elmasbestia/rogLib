@@ -1,0 +1,43 @@
+// Elementos de diseño para el objeto rogReco
+
+* {
+  --clrMnuFnd: #f7d794;
+  --clrMnuTxt: #5a311d;
+}
+
+.rogReco {
+  background-color: var(--clrMnuFnd);
+  color: var(--clrMnuTxt);
+  padding: 5px;
+}
+
+.btnReco {
+  background-color: var(--clrMnuTxt);
+  color: var(--clrMnuFnd);
+  cursor: pointer;
+  padding: 6px 15px;
+  margin: 5px;
+  line-height: 200%;
+  
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.antReco {
+  background-image: url("../Imagenes/flcIzqClara.png");
+  border-radius: 25px 0 0 25px;
+}
+
+.sigReco {
+  background-image: url("../Imagenes/flcDerClara.png");
+  border-radius: 0 25px 25px 0;
+}
+
+.bsqReco {
+	background-image: url("../Imagenes/icnBsqClara.png");
+}
+
+.numReco {
+  text-align: center;
+}

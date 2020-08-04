@@ -1,7 +1,6 @@
-"use strict";
 // Librería para manejo de fechas
     const hoy = () => new Date();
-    var VSs = SanViernes(); // Tabla de Efemérides móviles
+    var _TF = {};            // Tabla de días feriados
 
 function rogFecha(ano, mes, dia) {
     // Objeto Fecha, mejorado
@@ -15,25 +14,27 @@ function rogFecha(ano, mes, dia) {
     this.ano = () => fecha.getFullYear()
     this.mes = () => parseInt(fecha.getMonth()) +1
     this.dia = () => fecha.getDate()
-//    this.getFullYear = () => fecha.getFullYear()
+    this.getFullYear = () => fecha.getFullYear()
     this.getMonth = () => fecha.getMonth()
     this.getDate = () => fecha.getDate()
     this.getDay = () => fecha.getDay()
     this.fecha = () => fecha
     this.futuro = () => (fecha > hoy())
     this.esUltimo = () => fSuma(1,fecha).getMonth() !== fecha.getMonth()
-    this.getDiaSemana = getDiaSemana
-    this.getNbMes = nbMes
+    this.getDiaSemana = (corto) => getDiaSemana(corto,fecha)
+    this.getNbMes = (corto) => nbMes(corto,fecha)
     this.igual = (...otraF) => igual(fecha,...otraF);
     this.esHoy = () => igual(fecha,hoy())
-    this.ayer = ayer
     this.esAyer = () => igual(fecha,ayer())
-    this.manana = () => laFecha.suma(1, hoy())
-    this.esManana = () => igual(laFecha.manana())
+    this.manana = () => fSuma(1, hoy())
+    this.esManana = () => igual(this.manana())
     this.suma =  (n) => fSuma(n,fecha)
     this.resta = (n) => fResta(n,fecha)
+    this.esLaboral = () => esFechaLaboral(fecha),
+    this.lapsoLaboral = (hasta,traza) => lapsoLaboral(fecha,hasta,traza)
+    this.Calendario = (ref, acciones, llenaDia) => new rogCalendario(fecha, ref, acciones, llenaDia)
 
-    this.clase = (f) => {
+    this.clase = () => {
         var retorno = "";
         
         if (laFecha.esHoy()) { retorno = " Hoy futuro"}
@@ -85,7 +86,7 @@ function rogFecha(ano, mes, dia) {
         
         switch (tipo) {
             case "rev":
-                retorno =  f.getFullYear()+"/"+ fmt2((f.getMonth() +1)) +"/"+ fmt2(f.getDate());
+                retorno =  f.getFullYear()+"-"+ fmt2((f.getMonth() +1)) +"-"+ fmt2(f.getDate());
                 break;
             case "cool":
                 retorno = getDiaSemana(true,f) + " " + f.getDate() +" de "+ nbMes(null,f);
@@ -109,11 +110,20 @@ function rogFecha(ano, mes, dia) {
     }
     function ultimo(ano, mes) {
         // Último día del mes
-        var retorno = 32, prueba = {};
+        let retorno = 32, prueba = {};
+        let _ano = ano
+        let _mes = mes
+        if (typeof ano === "object") {
+            _ano = ano.getFullYear()
+            _mes = ano.getMonth()
+        }
         
-        do { prueba = new Date(ano, mes, --retorno) } while (prueba.getMonth() === mes);
+        do { prueba = new Date(_ano, _mes, --retorno) } while (prueba.getMonth() > _mes);
         
-        return retorno;
+        return prueba;
+    }
+    function primero(fecha) {
+        return new Date(fecha.getFullYear(),fecha.getMonth(),1)
     }
     function ayer () { return fResta(1, hoy()) }
     function creaFecha(ano, mes, dia) {
@@ -124,23 +134,21 @@ function rogFecha(ano, mes, dia) {
         if (mes === undefined) {
             if (ano === undefined) { fecha = hoy() }
             else {
-                if (typeof(ano) === "object") { fecha = ano }
+                if (typeof(ano) === "object") fecha = ano instanceof Date ? ano : ano.fecha()
                 else {fecha = new Date(ano) }
             }
-        }
-        else {
+        } else {
             if (ano === undefined) {fecha = new Date(ano,mes)} // (Año, mes)
             else { fecha = new Date(ano, mes, dia || 1) }
         }
         return fecha;
     }
-    function getDiaSemana(corto,f) {
+    function getDiaSemana(corto = false,f) {
         var retorno = "";
-        f = f || fecha;
         retorno = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][f.getDay()];
         return corto ? retorno.slice(0,3) : retorno;
     }
-    function nbMes(corto,f) {
+    function nbMes(corto = false,f) {
         // @param corto indica si se devuelve el nombre completo o en tres letras solamente
         // @param f puede ser una fecha o un número relativo al mes de "fecha", por defecto, es "fecha"
         var retorno;
@@ -151,54 +159,60 @@ function rogFecha(ano, mes, dia) {
         retorno = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][f.getMonth()];
         return corto ? retorno.slice(0,3) : retorno;
     }
-    function esFechaLaboral(f) {
-        // Booleana: Determina si una fecha es Laboral o no
-        function sacaAno(wf) {
-          if (typeof wf === "string") {
-            switch(wf.length) {
-              case 2: return "20"+wf
-              case 4: return wf
-              default:
-                return wf.slice(0,4)
-            }
-          } else return wf.getFullYear()
-        }
-      
-        function esFiestaMovil(f) {
-            // Revisa si la fecha cae en Carnaval o Semana Santa
-            var wf = fFmt("rev",f);
-            
-            function vsDelAno(wf) {
-                // Compara la fecha con la Tabla de Efemérides
-                let ano = sacaAno(wf)
-                return creaFecha(ano +VSs[ano]);
-            }
-        
-            var VS = vsDelAno(wf);
-            if (f.getFullYear() != VS.getFullYear()) { return false }  // Si la fecha es posterior al Viernes Santo de ese año
-            
-            var fechas = [-46, -45, -1, 0], xfecha = 0;  // Lun y Mar de Carnaval, Jue y Vie Santos con relación al Viernes Santo
-            var busca = true;
-            while (busca) {
-                if (wf === fFmt("rev",fSuma(fechas[xfecha], VS))) { busca = false }
-                else {
-                    xfecha++;
-                    busca = (xfecha < fechas.length);
-                }
-            }
-            return xfecha < fechas.length;
-        }
-        
-        f = f || this.fecha();
-        var dia = f.getDay();
-        var retorno = ((dia === 0) || (dia === 6)); // Fin de Semana
-        if (!retorno) { // fiestas fijas en Vzla:
-            retorno = ([ '1/0', '1/1', '19/3', '1/4', '24/5', '5/6', '24/6', '12/9', '24/11', '25/11', '31/11' ].indexOf(f.getDate() +"/" +f.getMonth()) >= 0);
-         
-            if (!retorno) { retorno = esFiestaMovil(f) }
-        }
-        return !retorno;
+
+    function TF(ano = new Date()) {
+        let _ano = sacaAno(ano)
+
+        if(!_TF[_ano]) _TF[_ano] = creaTF(_ano)
+        return _TF[_ano]
     }
+
+    function creaTF(ano = new Date()) {
+        let _ano = sacaAno(ano)
+
+        function vsDelAno(_ano) {
+            // Compara la fecha con la Tabla de Efemérides
+            return creaFecha(ano +SanViernes()[sacaAno(ano)]);
+        }
+
+        // Viernes Santo
+        let VS = vsDelAno(_ano);
+        // Lun y Mar de Carnaval, Jue y Vie Santos con relación al Viernes Santo
+        let retorno = [-46, -45, -1, 0].map(x => fFmt("rev",fSuma(x, VS)))
+        
+        retorno = retorno.concat(fiestasFijas().map(x => _ano+x))
+
+        return retorno;
+    }
+
+    function fiestasFijas(ano) {
+        return [ '-01-01', '-04-19', '-05-01', '-06-24', '-07-05', '-07-24', '-10-12', '-12-24', '-12-25', '-12-31' ]
+    }
+
+    function sacaAno(wf) {
+        switch(typeof wf) {
+            case "string":
+                switch(wf.length) {
+                    case 2: return "20"+wf
+                    case 4: return wf
+                    default:
+                    return wf.slice(0,4)
+                }
+                break
+            case "object":
+                return wf.getFullYear()
+                break
+            default:
+                return wf
+        }
+    }
+
+    function esFechaLaboral(f = new Date()) {
+        // Booleana: Determina si una fecha es existe dentro de la Tabla de Días Feriados (TF)      
+		if((f.getDay() === 0) || (f.getDay() === 6)) return false
+        return !TF(sacaAno(f)).includes(fFmt("rev",f))
+    }
+
     function fSuma(nDias = 1, f) {
         // Devuelve una fecha a partir de la actual más  @param nDias
         return new Date(f.getFullYear(),f.getMonth(),f.getDate() +nDias);
@@ -207,51 +221,35 @@ function rogFecha(ano, mes, dia) {
     function igual(f,...otraF) {
         return fFmt("",f) === fFmt("",creaFecha(...otraF))
     }
-    function lapsoLaboral(hasta, traza) {
+    function lapsoLaboral(desde,hasta, traza) {
         // Devuelve una fecha o un entero según:
         // Si "hasta" es una fecha: devuelve el número de días hábiles desde la fecha actual hasta "hasta"
         // Si "hasta" es un número: devuelve la fecha hábil "hasta" días hábiles después de la fecha actual
         // Si traza es verdadero, deja en la cónsola las fechas evaluadas
-        var retorno;
+        let cant = 0;
+        let retorno = new Date(desde.getTime());
         
         if (typeof(hasta) === "number") {
-            let cuenta = 0;
-            retorno = fecha;
-            while (cuenta < hasta) {
+            while (cant < hasta) {
                 if (esFechaLaboral(retorno)) {
-                    ++cuenta;
-                    if(traza){ console.log(cuenta +". "+retorno)}
+                    ++cant;
+                    if(traza){ console.log(cant +". "+retorno)}
                 }
-                retorno = suma(1,retorno);
+                retorno = fSuma(1,retorno);
             }
-            while (!esFechaLaboral(retorno)) { retorno = suma(1,retorno) }
+            while (!esFechaLaboral(retorno)) { retorno = fSuma(1,retorno) }
+            return retorno;
         }
         else {
-            let desde = fecha;
-            let otraFecha = new Date(hasta);
-            if (fecha > otraFecha) {
-                desde = otraFecha;
-                otraFecha = fecha;
-            }
-            retorno = 0;
             do {
-                desde = suma(1,desde);
-                if (esFechaLaboral(desde)) {
-                    ++retorno;
-                    if(traza) { console.log(retorno +". " +desde)}
+                retorno = fSuma(1,retorno);
+                if (esFechaLaboral(retorno)) {
+                    ++cant;
+                    if(traza) { console.log(cant +". " +retorno)}
                 }
-            } while (desde <= otraFecha);
+            } while (retorno <= hasta);
+            return cant
         }
-        return retorno;
-    }
-
-    rogFecha.prototype.getFullYear = () => fecha.getFullYear()
-    rogFecha.prototype.esLaboral = esFechaLaboral,
-    rogFecha.prototype.igual = (ano,mes,dia) => 
-    rogFecha.prototype.lapsoLaboral = lapsoLaboral
-    
-    rogFecha.prototype.Calendario = function(ref, acciones, llenaDia) {
-      var Calendario = new rogCalendario(this.fecha(), ref, acciones, llenaDia);
     }
 
 function SanViernes() {
@@ -325,33 +323,39 @@ function SanViernes() {
     Revisar creafecha para ver si se puede definir con Mes (mm o aa/mm)
 */
 
-function defMes(fecha) {
-
+function rogMes(fecha) {
+    return new rogLapso(fecha)
 }
 
-function creaLapso(desde,hasta) {
+function creaDiasLapso(desde,hasta) {
     let retorno = [];
     let xFecha = new Date(desde);
 
-    while (xFecha.getMonth() <= hasta) {
+    while (xFecha <= hasta) {
         retorno.push(xFecha)
-        xFecha.siguiente();
+        xFecha = fSuma(1,xFecha);
     }
 
     return retorno;
 }
 
 function rogLapso(desde,hasta) {
+	let _x = 0, _n = 0
+	
     this.desde = creaFecha(desde);
     this.hasta = hasta ? creaFecha(hasta) : ultimo(desde);
-    this.dias = creaLapso();
-
-    this.mes = (mes) => {}
+    this.dias = creaDiasLapso(this.desde, this.hasta);
+    _n = this.dias.length
+	
+    this.esMes = ((igual(this.dias[0], primero(this.desde))) && (igual(this.hasta,ultimo(this.desde))))
+	
+    this.siguiente = () => {
+		if(_x === _n) return null
+        else return new rogFecha(this.dias[_x++])
+    }
 }
 
-rogLapso.prototype.Calendario = function(ref, acciones, llenaDia) {
-    var Calendario = new rogCalendario(this.fecha(), ref, acciones, llenaDia);
-}
+rogLapso.prototype.Calendario = (ref, acciones, llenaDia) => new rogCalendario(this, ref, acciones, llenaDia);
 
 // CALENDARIO
 function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"), acciones, llenaDia) {
@@ -364,27 +368,49 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
         pinta();
     }
     function pinta() {
-        // Pinta el calendario del mes correspondiente a una fecha (@param mes)
-        // en el DOM identificado por @param ref
-        // y le asigna a cada "día" los eventos indicados en "acciones"
-        // @param Acciones es un arreglo de objetos { accion, funcion } que se envían como parámetros de EventListener de cada día
-        // @param llenaDia es la función que se usa para dar valor a cada día (Por defecto se pone el número del día y la propiedad "fecha" con la fecha del día)
-        // El primer elemento se aplica al elemento previo al día 1
-        // Para efectos de CSS, se preveen las siguientes clases:
-        // 1. calMes    contenedor del Calendario
-        // 2. calSem    Cada línea de siete días
-        // 3. calDia    Cada Día del Mes
-        // 4. calNoMes  Elementos al inicio y al final del Mes que corresponden a los días de ambas semanas que no pertenecen al mes
-        // 5. calNbMes  espacio donde se muestra el nombre del mes
-        // 6. calMesSig indicador del Mes Siguiente
-        // 7. calMesAnt indicador del Mes Anterior
-        // 8. noLaboral Días no laborales
+        /*
+         Pinta el calendario del mes correspondiente a una fecha (@param mes)
+         en el DOM identificado por @param ref
+         y le asigna a cada "día" los eventos indicados en "acciones"
+         @param Acciones es un arreglo de objetos { accion: funcion } que se envían como parámetros de EventListener de cada día
+         @param llenaDia es la función que se usa para dar valor a cada día (Por defecto se pone el número del día y la propiedad "fecha" con la fecha del día)
+         El primer elemento se aplica al elemento previo al día 1
+         Para efectos de CSS, se preveen las siguientes clases:
+             1. calMes    contenedor del Calendario
+             2. calSem    Cada línea de siete días
+             3. calDia    Cada Día del Mes
+             4. calNoMes  Elementos al inicio y al final del Mes que corresponden a los días de ambas semanas que no pertenecen al mes
+             5. calNbMes  espacio donde se muestra el nombre del mes
+             6. calMesSig indicador del Mes Siguiente
+             7. calMesAnt indicador del Mes Anterior
+             8. noLaboral Días no laborales
+        */
+
+        function defLapso(desde,hasta) {
+            /* Define el lapso a ser impreso
+                Puede ser un Mes o un lapso de fechas definido por _desde y _hasta
+                Opciones:
+                Desde
+                1. Desde está vacío:    desde la fecha actual hasta el fin del mes actual
+                2. Desde es
+                    a. rogLapso:        ya está definido (Se ignora el @param hasta)
+                    b. número:          _desde es el primero de ese mes para el año actual
+                    b. fecha:           _desde es esa fecha
+                Hasta
+                1. Hasta está vacío:    Último del Mes definido por Desde
+                2. Hasta es:
+                    a. fecha:           _hasta es esa fecha
+            */
+
+            if(desde instanceof rogLapso) return desde
+
+            return new rogLapso(desde,hasta);
+        }
 
         function defLlenaDia(dia, fecha) {
             // Contenido por defecto de un día del calendario (elemento DOM)
             // Se muestra el número del día y se crea la propiedad "fecha" con la fecha correspondiente
             dia.innerHTML = fecha.fmt("dd");
-            dia.fecha = new Date(fecha.fmt("rev"));
         }
 
         function agregaSemana() {
@@ -393,7 +419,7 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
         }
 
         function calNbMes() {
-            var retorno = document.createElement("DIV");
+            var retorno = document.createElement("SECTION");
             var parte = document.createElement("SPAN");
 
             parte.className = "calMesAnt";
@@ -410,6 +436,16 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
 
             return retorno;
         }
+
+        function calNbLapso(desde,hasta) {
+            var retorno = document.createElement("SECTION");
+            let _txt = "Desde " + desde.toString() + " hasta " + hasta.toString()
+
+            retorno.className = "calNbMes";
+            retorno.appendChild(document.createTextNode(_txt));
+
+            return retorno;
+        }
         
         function noMes(nDias) {
             let dia = document.createElement("DIV");
@@ -419,9 +455,9 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
             semana.appendChild(dia);
         }
 
+        var _lapso = defLapso(mes)
         var dia = {};
-        var xMes = mes.getMonth();
-        var xFecha = new rogFecha(mes.getFullYear(), xMes, 1);
+        var xFecha = _lapso.siguiente();
         var xDiaSem = xFecha.getDay();
         var semana = document.createElement("DIV");
 
@@ -433,11 +469,13 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
 
         if (xDiaSem) noMes(xDiaSem) // Primera Semana (Días del mes anterior)
 
-        while (xFecha.getMonth() == xMes) {
+        while (xFecha) {
             let x = {};
             dia = document.createElement("DIV");
             dia.className = "calDia" +xFecha.clase();
-            if (acciones && acciones[1]) for(x of acciones[1]) {dia.addEventListener(x.accion,x.funcion)}
+            dia.fecha = xFecha.fmt("rev");
+          
+            if (acciones && acciones[1]) for(x in acciones[1])    dia.addEventListener(x,acciones[1][x])
             llenaDia (dia,xFecha, defLlenaDia);
             semana.appendChild(dia);
 
@@ -447,7 +485,7 @@ function rogCalendario (mes = new Date(), ref = document.querySelector(".calMes"
                 semana = document.createElement("DIV");
             }
 
-            xFecha.siguiente();
+            xFecha = _lapso.siguiente()
         }
 
         if (xDiaSem) { // Última Semana

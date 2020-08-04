@@ -21,7 +21,8 @@
     .calMesSig:hover {
         cursor: e-resize;
 	}
-    .calSem { display: inline } /* Contenedor de cada Semana */
+    .calSem { display: flex } /* Contenedor de cada Semana */
+
     .calDia { /* Celda que muestra cada día */
         width: 28%;
         margin: 3px;
@@ -33,20 +34,24 @@
         background-color: lightsteelblue;
         color: white;
      }
-    .calDia:hover {
+
+     .calDia:hover {
         color: ivory;
         background-color: skyblue;
     }
+
     .calNoMes { /* Días que no pertenecen al Mes Actual */
          background-color: darkgrey;
          border-radius: 25px;
     }
-    .NoLaboral { /* Feriados y Fines de Semana */
+
+    .noLaboral { /* Feriados y Fines de Semana */
         background-color: white;
         color: red;
         border: 1px solid red;
         }
-    #Calendario { /* Contenedor del Calendario */
+
+        #Calendario { /* Contenedor del Calendario */
         background-color: cadetblue;
         color: white;
         }

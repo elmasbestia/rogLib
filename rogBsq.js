@@ -10,16 +10,12 @@ function rogBsq(dom, opciones, fn) {
 	}
     
     function analValor(parm,texto) {
-        let pos = texto.indexOf("=");
-        if(pos > -1) {
-            let que = texto.slice(0,pos).trim();
-            let valor = texto.slice(pos+1).trim();
-
-            return [que,valor];
+        if(texto.includes("=")) {
+            return texto.split("=").map(x => x.trim())
         } else return [parm,texto];
     }
 
-           function divEspera() {
+    function divEspera() {
         retorno = document.createElement("DIV");
         retorno.innerHTML = "<i class='fa fa-spinner fa-spin'></i>";
         retorno.innerHTML += "<span id='txtEspera'></span>";
@@ -34,11 +30,10 @@ function rogBsq(dom, opciones, fn) {
     }
 	
 	function creaOpc(opciones) {
-		let texto = "", opcion = {};
-		let combo = document.createElement("SELECT");
+		let texto = "";
 		
-		opciones.forEach(x => {
-			opcion = document.createElement("OPTION");
+		return opciones.reduce((cmb, x) => {
+			let opcion = document.createElement("OPTION");
 
 			if (typeof x === "string") {
 				opcion.value = x;
@@ -49,14 +44,13 @@ function rogBsq(dom, opciones, fn) {
 				if(x.sinValBsq) {
 					opcion.class = "sinValBsq";
 					opcion.onclick = llamaBsq;
-				}
-				
+				}	
 			}
 			opcion.appendChild(document.createTextNode(texto));
-			combo.appendChild(opcion);
-		});
-
-		return combo;
+			
+			cmb.appendChild(opcion);
+			return cmb;
+		}, document.createElement("SELECT"));
 	}
 
 	function creaVal() {

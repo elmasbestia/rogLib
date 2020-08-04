@@ -8,8 +8,10 @@ var _agrega  = () => moveCorresponding(regVacio(_stru), _frm);
 var _fn = (datos) => console.log("Lectura perdida:", datos);
 
 class rogForm {
-    constructor (dom, Stru) {
-        _stru = Stru;
+    #autoCierra = false
+    
+    constructor (dom, Stru, opcs) {
+        _stru = Stru instanceof Array ? Stru : desarma(Stru).map(x => new rogCampo(x,Stru[x]));
 
         _frm = document.createElement("FORM");
         _frm.className = "rogForm";
@@ -27,6 +29,9 @@ class rogForm {
         _frm.appendChild(creaBtns(_frm))
         
         //btnDefault(_frm,"btnLee")
+	   _frm.onkeypress = (e) => { if(e.keyCode === 13) this.lee() }
+        
+        if(opcs) for(let opc in opcs) this[opc] = opcs[opc];
     }
     
     set datos(buffer) {
@@ -68,7 +73,22 @@ class rogForm {
         return _fn;
     }
     
-    lee () { procede(this.datos,this) }
+    set autoCierra (valor) {
+        this.#autoCierra = valor
+    }
+
+    get autoCierra () {
+        return this.#autoCierra
+    }
+
+    get cadena() {
+      return cadenita(this.datos)
+    }
+    
+    lee () { 
+        procesaLoLeido(this.datos,this)
+        if(this.autoCierra) cierraModal(this)
+    }
 
     get cancela () { return _cancela };
     
@@ -195,7 +215,8 @@ function moveCorresponding(de,a) {
                 if(campo.type === "radio") campo.checked = (campo.value === valores[nbCampo]);
                 else if(elementos[i].type === "checkbox") {
                         elementos[i].checked = valores[nbCampo];
-                     } else elementos[i].value = valores[nbCampo];
+                     } else if (elementos[i].type === "date") elementos[i].value = rogFmt.Fecha(valores[nbCampo])
+                            else elementos[i].value = valores[nbCampo];
             }
         }
     } else {                // De form a datos
@@ -210,7 +231,8 @@ function moveCorresponding(de,a) {
                     if(elementos[i].checked ) valores[nbCampo] = elementos[i].value;
                 } else if(elementos[i].type === "checkbox") {
                     valores[nbCampo] = elementos[i].checked;
-                } else valores[nbCampo] = elementos[i].value;
+                     } else if (elementos[i].type === "date") elementos[i].value = rogFmt.Fecha(valores[nbCampo])
+                            else elementos[i].value = valores[nbCampo];
             }
         };
     }
@@ -224,13 +246,13 @@ function creaBtns(frm) {
     let _botones  = document.createElement("NAV");
   
     _botones.appendChild(creaSubmit("✔"))
-    _botones.appendChild(creaBtn("✘","rogBtn",_cancela));
-    _botones.appendChild(creaBtn("&#x2795","rogBtn",_agrega));
+    _botones.appendChild(creaBtn("✘","", cierraModal));
+    _botones.appendChild(creaBtn("&#x2795","",_agrega));
     
     return _botones;
 }
 
-function creaBtn(etq,clase,atribs,txt) {
+function creaBtn(etq,clase = "",atribs,txt) {
     /* 
     Retorna un botón con los atributos:
         @param etq      Texto del botón
@@ -243,7 +265,7 @@ function creaBtn(etq,clase,atribs,txt) {
     
     let _btn = document.createElement("SPAN");
     _btn.innerHTML = etq;
-    _btn.className=clase;
+    _btn.className= "rogBtn " +clase;
 
     if(atribs instanceof Function) _btn.onclick = atribs;
     else for(let atrib in atribs) _btn[atrib] = atribs[atrib];
@@ -256,6 +278,7 @@ function creaSubmit(txt = "Dale!", url) {
     _btn.type = "SUBMIT";
     _btn.value = txt;
     _btn.formAction = url;
+    _btn.className = "rogBtn"
     return _btn;
 }
 
@@ -273,13 +296,13 @@ function validaFormulario(formulario) {
     return Object.array(objDom(formulario).elements).reduce((fino,x) => fino && Stru[x.name].valida(), true)
 }
         
-function procede(datos,frm) {
+function procesaLoLeido(datos,frm) {
     if(frm.validador.url) accede(
         frm.validador.metodo,frm.validador.url,
         datos => respuestaValidacion(datos,frm),
         datos
     );
-    else frm.alLeer(datos);
+    else frm.alLeer(frm.datos)
 }
         
 function respuestaValidacion(datos,frm) {
@@ -305,8 +328,34 @@ function evalRadio(nb) {
         if(x.checked) retorno = x.value;
     });
     return retorno;
-}
+filter(x => x.name)}
 
 function evalOpcRadio(opcion,valor) {
     if(opcion.checked) return opcion.value;
+}
+
+function creaModal(stru, cb, opcs) {
+    let vnt = document.querySelector(".rogModalTmp")
+    if(vnt) vnt.innerHTML = ""
+    else vnt = document.createElement("DIV")
+    vnt.className = "rogModal rogModalTmp"
+    let cnt = document.createElement("DIV")
+    cnt.className = "cntModal"
+    let btn = document.createElement("SPAN")
+    btn.className="rogCierraModal"
+    btn.textContent = "X"
+    
+    cnt.appendChild(btn)
+    vnt.appendChild(cnt)
+    
+    let forma = new rogForm(cnt,stru,opcs)
+    forma.alLeer = cb
+    
+    document.getElementsByTagName("BODY")[0].appendChild(vnt)
+  
+    mstModal(vnt)
+}      
+      
+function cadenita(datos) {
+    return "?"+desarma(datos).map(x => x +"="+ datos[x]).join("&")
 }

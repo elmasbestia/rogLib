@@ -78,11 +78,18 @@ Combo#1 de Coco/Waraira 45.38
 	--clrTxtLst:    black;
 $gris: #a19e9bff;
 $azul: #628395ff;
-$arena: #d78626ff;
-$crema: #fffecbff;
-$morado: #aa99e4ff;
+$arena: #d78626;
+$crema: #fffecb;
+$morado: #aa99e4;
 
 5a311d Choco
-d87e30 arena
 fee89d crema
 bc071a
+
+
+let colores = {
+  ARENAS: ["#d87e30", "#d78626", "#f7d794", "#f5cd79"],
+  AZUL: ["#778beb", "#546de5", "#3dc1d3"],
+  GRIS: ["#596275", "#303952"],
+  ROJOS: ["#f19066", "#e66767", "#c44569", "#cf6a87"]
+};

@@ -28,7 +28,7 @@ function rogTxt(nbBsqDom, nbVntTxt, txts, fn) {
     
     function mstTxt() {
         txtDom.innerHTML = this.txt;
-        if (fnMst) { fnMst(this) }
+        if (fnMst) fnMst(this);
     }
     
     function getTxt() { return this.txt; }
@@ -98,8 +98,7 @@ function rogTxt(nbBsqDom, nbVntTxt, txts, fn) {
     }
     
     function sacaTxt(elemento, fn) {
-        if (typeof elemento === "object") { return fn(elemento)}
-        else {return elemento}
+        return typeof elemento === "object" ? fn(elemento) : elemento;
     }
 
     function busca() {
@@ -157,9 +156,9 @@ function rogTxt(nbBsqDom, nbVntTxt, txts, fn) {
     }
     
     this.Datos = txts;
-    this.setTodas = (valor) => { todas = valor };
+    this.setTodas  = valor => todas = valor;
     this.getCadena = () => cadena;
-    this.setcadena = (valor) => { cadena = valor }
+    this.setcadena = valor => cadena = valor;
     
     dom = typeof nbBsqDom === "string" ? document.getElementById(nbBsqDom) : nbBsqDom;
     dom.addEventListener("input",cambio);

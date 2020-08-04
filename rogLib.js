@@ -47,9 +47,11 @@ function valDom(nb) { return document.querySelector("[name="+nb+"]").value }
 
 function rogUrlPrm() {
     var prms = {};
-    var partes = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,que,valor) {
-        prms[que] = decodeURIComponent(valor);
-    });
+    var partes = window.location.href.replace(
+		/[?&]+([^=&]+)=([^&]*)/gi, 
+		(m,que,valor) => 
+			prms[que] = decodeURIComponent(valor)
+    );
     return prms;
 }
 
@@ -61,7 +63,7 @@ const domTxt = (contenido,que,clase,opcs) => "<"+ que +(clase ? " class='" +clas
 
 function creaOpcs(opcs) {
     let retorno = "";
-    for(x in opcs) { retorno = ` ${x}='${opcs[x]}'`}
+    for(let x in opcs) { retorno += ` ${x}='${opcs[x]}'`}
     return retorno;
 }
 
@@ -121,6 +123,10 @@ function desarma(lista) {
         else retorno = Object.keys(lista);
     }
     return retorno;
+}
+
+function desarmaObj(obj) {
+	return Object.keys(obj).map(x => obj[x])
 }
 
 const nbSerial = (prefijo = "") => prefijo +rogFmt.fSerial();
@@ -220,7 +226,7 @@ function accede(accion,url,fn,datos) {
 
 function regVacio(Stru) {
 	let retorno = {};
-	for(x in Stru) {
+	for(let x in Stru) {
 		retorno[x] = valPorOmision(Stru[x]);
 	}
 	return retorno;
@@ -238,14 +244,14 @@ function rogAncetre(dom,clasePa) {
 }
 
 function cierraModal(e) {
-    rogAncetre("rogModal").style.display = "none";
+    rogAncetre(e.target,"rogModal").style.display = "none";
 }
 
 function domImg(src,caption,imgProps,figProps) {
     function txtProps(props) {
         let retorno = "";
         if(props) {
-            for(x in props) {
+            for(let x in props) {
                 retorno += " " +x +"= '" +props[x] +"'";
             }
         }
@@ -254,7 +260,7 @@ function domImg(src,caption,imgProps,figProps) {
     
     let retorno = "<figure";
     retorno += txtProps(figProps);
-    retorno += "><img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg") +"' height= 90%"
+    retorno += "><img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg") 
     retorno += txtProps(imgProps);
     retorno += "><figcaption>"+caption+"</figcaption></figure>";
     return retorno;
@@ -262,9 +268,12 @@ function domImg(src,caption,imgProps,figProps) {
 
 function tabTitulos(campos) {
     return domTxt(
-        domTxt(campos.reduce((linea,valor, i) => linea += domTxt(valor,"th"),"")
-    ,"tr")
-    , "thead");
+        domTxt(
+            campos.reduce((linea,valor, i) => linea += domTxt(valor,"th"),""),
+            "tr"
+        ),
+        "thead"
+    );
 }
 
 function creaCombo(datos,dom,item) {
