@@ -1,28 +1,75 @@
 // Librería de funciones para JS
 // Autor: Rafa Gómez https://rafagomez.neocities.org
 
-// Formatos numéricos    
+// Formatos
 const rogFmt = {
     Moneda: new Intl.NumberFormat('VES', {
         style: 'decimal',
-        minimumFractionDigits: 2
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format,
     Ent: new Intl.NumberFormat('VES', {
         style: 'decimal',
-        minimumFractionDigits: 0
+        maximumFractionDigits: 0
     }).format,
     Pc: new Intl.NumberFormat('VES', {
         style: 'percent',
-        minimumFractionDigits: 2
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format,
     Tlf: nro => {
         let _nro = nro.toString();
-        return "(" +_nro.slice(0,3)+") " +_nro.slice(3,6) +" " +_nro.slice(7)
-      },
-    Fecha: (f = new Date()) => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
-    Hora: (f = new Date()) => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
+        return `(${_nro.slice(0,3)}) ${_nro.slice(3,6)}  ${_nro.slice(7)}`
+    },
     dd: nro => (nro > 9 ? "" : "0") + nro,
-    fSerial: (f = new Date()) => f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes())
+    Fecha: fecha => rogFmtFecha(fecha)[fmt](),
+    Lapso: (desde = new Date(), hasta = new Date()) => `Desde el ${rogFmt.Fecha(desde).dma()} hasta el ${rogFmt.Fecha(hasta).dma()}`
+}
+
+function rogFmtFecha (f = new Date()) {
+    /*
+        toString          : Tue Dec 15 2020 13:08:12 GMT-0400 (hora de Venezuela)
+        toDateString      : Tue Dec 15 2020
+        toISOString       : 2020-12-15T17:08:12.901Z
+        toJSON            : 2020-12-15T17:08:12.901Z
+        toLocaleDateString: 15/12/2020
+        toLocaleString    : 15/12/2020 1:08:12 p. m.
+        toUTCString       : Tue, 15 Dec 2020 17:08:12 GMT
+    */
+    f = creaFecha(f);
+    return {
+        amd: () => f.toJSON().slice(0,10),
+        //f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
+        dma: () => f.toLocaleDateString(),
+        //rogFmt.dd(f.getDate())+"/"+rogFmt.dd(f.getMonth() +1)+"/"+f.getFullYear(),
+        am:  () => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1),
+        Hora: () => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
+        fSerial: () => limpiaPlb(f.toJSON()),
+        //f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes()),
+        a: () => f.getFullYear()
+    }
+}
+
+// Creación de fechas
+function creaFecha(ano, mes, dia) {
+        // Devuelve un objeto fecha a partir de los parámetros enviados
+        // si no se envía nada, devuelve la fecha de hoy
+        var fecha;
+        
+        if (mes === undefined) {
+            if (ano === undefined) {
+              let hoy = new Date();
+              if(dia === undefined) fecha = hoy;
+              else fecha = new Date(hoy.getFullYear(), hoy.getMonth(), dia);
+            } else {
+                if (typeof(ano) === "object") fecha = ano instanceof Date ? ano : ano.fecha()
+                else {fecha = new Date(ano) }
+            }
+        } else {
+            if (ano === undefined) fecha = new Date(ano,mes);
+            else fecha = new Date(ano, mes, dia || 1);
+        }
+        return fecha;
 }
 
 function escogeUna(a) {
@@ -32,13 +79,35 @@ function escogeUna(a) {
 //              Funciones con DOM
 function objDom(dom) { return typeof dom === "string" ? document.getElementById(dom) : dom }
 
-function objVacio(obj) { return Object.entries(obj).length === 0 }
+function objVacio(obj) { return !(obj && Object.entries(obj).length) }
 
 function jeto(que,valor) {
     let obj = {};
     if(que instanceof Array) que.forEach(x => obj[x] = valor[x]);
     else obj[que] = valor;
     return obj;
+}
+
+function limpiaPlb(palabra = ""){
+    let sinAcento = {
+        á: "a",
+        é: "e",
+        í: "i",
+        ó: "o",
+        ú: "u",
+        ü: "u",
+        ñ: "n",
+        Á: "A",
+        É: "E",
+        Í: "I",
+        Ó: "O",
+        Ú: "U",
+        Ü: "U",
+        Ñ: "N"
+    };
+    let reg = regExpLimpia = /[áéíóúñ]/ig;
+
+    return palabra.replace(reg, letra => sinAcento[letra])
 }
 
 function entreComillas(texto,simples) { return (simples ? "'" : '"') +texto +(simples ? "'" : '"')}
@@ -62,8 +131,12 @@ function spanCant(cant,opcional) {
 const domTxt = (contenido,que,clase,opcs) => "<"+ que +(clase ? " class='" +clase+"'" : "")+creaOpcs(opcs)+">" +contenido +"</"+que+">";
 
 function creaOpcs(opcs) {
+    function nbAtributo(atrib) {
+        return atrib.startsWith("data") ? "data-"+atrib.slice(4) : atrib === "cursor" ? "style.cursor" : atrib;
+    }
+    
     let retorno = "";
-    for(let x in opcs) { retorno += ` ${x}='${opcs[x]}'`}
+    for(let x in opcs) { retorno += ` ${nbAtributo(x)}= '${opcs[x]}'`}
     return retorno;
 }
 
@@ -73,22 +146,27 @@ function quitaClase(clase) {
 }
 
 function nivelDe(dom) {
-    let retorno;
-    objDom(dom).classList.forEach(x => { if(x.slice(0,3) === "rog") retorno = x })
-    return retorno;
+    return Array.from(objDom(dom).classList).find(x => x.startsWith("rog"))
 }
 
-function rogActiva(opc) {
-  let _nivel = nivelDe(opc);
-
-  let actual = document.querySelector("."+_nivel+".activa");
+function rogActiva(opc, nivel = "."+nivelDe(opc)) {
+  let actual = document.querySelector(nivel+".activa");
 
   if(actual) actual.classList.remove("activa");
   if(actual !== opc) opc.classList.add("activa");
 }
 
+// Funciones 
+
+const def = x => x || "";
+
 function strCompara(campo,descendente){
-    // Función que compara dos objetos sobre la base de uno o varios de sus elementos
+    /*
+        Función que compara dos objetos sobre la base de uno o varios de sus elementos
+        @param campo      : es la lista de elementos a comparar
+        @param descendente: si es verdadero, la comparación es descendente 
+    */
+    
     var menor = -1, mayor = 1;
     var que = campo;
     const comp1 = (a,b) => (def(a[que]) < def(b[que])) ? menor : (def(a[que]) > def(b[que])) ? mayor : 0;
@@ -101,7 +179,6 @@ function strCompara(campo,descendente){
       } while (++i < _campos.length && !retorno);
       return retorno;
     }
-    function def(x) { return x || "" }
     if (descendente) {
         menor = 1;
         mayor = -1;
@@ -114,7 +191,7 @@ function desarma(lista) {
     // Crea un arreglo a partir de:
     // 1. Una lista de palabras separada por coma y un espacio en una cadena de caracteres: "A, B, C"
     // 2. Un objeto: { A: ..., B: ..., C: ... }
-    // 3. Si @param valores es Un arreglo, devuelve la referencia correspondiente
+    // 3. Si @param valores es Un arreglo lo devuelve la referencia correspondiente
 
     let retorno = [];
     if(lista) {
@@ -126,10 +203,11 @@ function desarma(lista) {
 }
 
 function desarmaObj(obj) {
+    // Crea un arreglo con los elementos de un Objeto
 	return Object.keys(obj).map(x => obj[x])
 }
 
-const nbSerial = (prefijo = "") => prefijo +rogFmt.fSerial();
+const nbSerial = (prefijo = "") => prefijo +rogFmt.Fecha().fSerial();
 
 function Extension(nbArchivo){
     var retorno = "";
@@ -155,14 +233,17 @@ function otraVnt(url, ancho=600, alto=800) {
 }
 
 function rogAsigna(selector,evento,fn) {
+    let arreglo = selector;
     if(typeof selector === "string") {
-        let arreglo = document.querySelectorAll(selector);
-        for(let x = 0; x < arreglo.length;x++) {
-            arreglo[x].i = x;
-            arreglo[x][evento] = fn;
-            arreglo[x].style.cursor = "pointer";
-        }
-    } else selector[evento] = fn;
+        arreglo = document.querySelectorAll(selector);
+    } else {
+        if(!selector.__proto__.hasOwnProperty("length")) arreglo = [selector];
+    }
+    for(let x = 0; x < arreglo.length;x++) {
+        arreglo[x].i = x;
+        arreglo[x][evento] = fn;
+        arreglo[x].style.cursor = "pointer";
+    }
 }
 
 function rogPrm(prm) {
@@ -211,7 +292,7 @@ function accede(accion,url,fn,datos) {
 //            xobj.onprogress = (e) => { console.log("Progress: ", e) }
     xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")") };
     xobj.onload = () => {
-		if (xobj.status < 400) {
+		if (xobj.status <= 400) {
 			if(accion === "GET") {
 				fn(JSON.parse(xobj.responseText));
 			} else {
@@ -233,18 +314,23 @@ function regVacio(Stru) {
 }
 
 function mstModal(dom) {
-    objDom(dom).style.display = "block";
+    objDom(dom).classList.add("activa");
     rogAsigna(".rogCierraModal","onclick",cierraModal);
 }
 
 function rogAncetre(dom,clasePa) {
+    // target.matches()
     let pa = objDom(dom);
     while (!pa.classList.contains(clasePa)) { pa = pa.parentElement}
     return pa;
 }
 
 function cierraModal(e) {
-    rogAncetre(e.target,"rogModal").style.display = "none";
+    let vnt = rogAncetre(e.target,"rogModal")
+    
+    if(vnt.tiempo) clearTimeout(vnt.tiempo);
+    
+    vnt.classList.remove("activa");
 }
 
 function domImg(src,caption,imgProps,figProps) {
@@ -260,7 +346,7 @@ function domImg(src,caption,imgProps,figProps) {
     
     let retorno = "<figure";
     retorno += txtProps(figProps);
-    retorno += "><img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg") 
+    retorno += "><img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg");
     retorno += txtProps(imgProps);
     retorno += "><figcaption>"+caption+"</figcaption></figure>";
     return retorno;
@@ -269,7 +355,7 @@ function domImg(src,caption,imgProps,figProps) {
 function tabTitulos(campos) {
     return domTxt(
         domTxt(
-            campos.reduce((linea,valor, i) => linea += domTxt(valor,"th"),""),
+            campos.reduce((linea,valor) => linea += domTxt(valor,"th"),""),
             "tr"
         ),
         "thead"
@@ -282,22 +368,22 @@ function creaCombo(datos,dom,item) {
     // Si se omite @param dom se devuelve el codigo HTML correspondiente
     // @param item puede ser:
     // 1. el nombre de un elemento en datos
-    // 2. un Objeto { valor:, texto } con el nombre de los elementos a usar
+    // 2. un Objeto { valor: texto } o {valor: nb del valor, texto: nb del texto} con el nombre de los elementos a usar
     // 3. Si se omite, es el valor en datos
 
-    let valor = x => x;
+    let valor = (x,i) => i;
     let texto = x => x;
     if(item) {
         if(typeof item === "string") {
             valor = x => x[item];
             texto = x => x[item];
         } else {
-            valor = x => x[item.valor];
+            valor = (x,i) => x[item.valor] || i;
             texto = x => x[item.texto]; 
         }
     }
     
-    let _combo = datos.reduce((combo,x)=> combo +="<option value='"+valor(x)+"'>"+texto(x)+"</option>","<select>")+"</select>";
+    let _combo = datos.reduce((combo,x,i)=> combo +="<option value='"+valor(x,i)+"'>"+texto(x)+"</option>","<select>")+"</select>";
 //+spanCant(x.cant,true)
     if(dom) {
         let _dom = objDom(dom);
@@ -310,10 +396,10 @@ function creaOpcion(item) {
 	var opcion = document.createElement("OPTION");
 
 	if (typeof item === "string") {
-		opcion.value = item
-		opcion.appendChild(document.createTextNode(item))
+		opcion.value = item;
+		opcion.appendChild(document.createTextNode(item));
 	} else {
-		opcion.value = item.valor
+		opcion.value = item.valor;
 		opcion.appendChild(document.createTextNode(item.texto));
 	}
 	return opcion;
@@ -323,75 +409,24 @@ function domLinea (valores,clsLinea,clsCelda,fmts) {
     return domTxt(valores.reduce((linea,valor, i) => linea += domCelda(valor,clsCelda === i ? 'rogId': null),""), "tr",clsLinea);
 }
 
-function domCelda(valor,clase) { return domTxt(valor || "","td",clase)  }
+function agrLinea(dom, valores,clsLinea,clsCelda,fmts) {
+    objDom(dom).innerHTML += domLinea(valores,clsLinea,clsCelda,fmts);
+}
 
-function mstLista(datos,dom,caption = "", campos = null,fn = null,nbId="") {
-	let donde = objDom(dom);
-    let valor, titulo, clase;
-
-/*
-    if(campos) [valor,titulo, clase] = campos;
-    else {
-        [valor,titulo] = Object.keys(datos[0]);
-        clase = "rogLi";
-    }
-*/
-
-    if(datos.length) {
-        let indice = campos ? (campos.valor ? (e,i) => e[campos.valor] : (e,i) => i) : (e,i) => i;
-        let texto  = campos ? (campos.texto ? e => e[campos.texto] : e => e) :  (e => e);
-        let title  = campos ? campos.title || null : null;
-      
-        donde.innerHTML = "";
-        
-        if(caption) {
-            let tit = document.createElement("H3");
-            tit.className = "rogTitLista";
-            tit.innerHTML = caption+spanCant(datos.length);
-            donde.appendChild(tit);
-        }
-                        
-        let lista = document.createElement("OL");
-        donde.appendChild(lista);
-
-        datos.forEach((e,i) => {
-            let li = document.createElement("LI");
-            li.className = clase;
-            li.value = indice(e,i);
-            if(typeof e === "string") li.textContent = e;
-            else {
-                li.textContent = texto(e); 
-                if(title) li.title = e[title];
-            }
-            if(fn) rogAsigna(li,"onclick",fn);
-            lista.appendChild(li);
-        });
+function clsComp(valor,cls) {
+    let _valor = def(valor);
+    let _cls = _valor && _valor.clase || "";
+    if(cls) {
+        return cls +" "+_cls;
     } else {
-        donde.innerHTML = "<h3 class='rogTitLista'>No hay " +(caption || "datos")+ "</h3>"
+        return _cls;
     }
 }
 
-function mstTabla(datos,dom,caption = "",campos = null,Fn = null,nbId="") {
-	let donde = objDom(dom);
-    
-    if(datos.length) {
-        let tabla = "<table><caption><h3>" +caption+ "<sup><span class='badge'>"+datos.length+"</span></sup></h3></caption>";
-        let titulos;
-        let _campos = desarma(campos || datos[0]);
-        let fnId = _campos.indexOf(nbId);
-
-        datos.forEach(e => {
-            if (!titulos) {
-                titulos = tabTitulos(_campos)
-                tabla += titulos+"<tbody>";
-            }
-            tabla += domLinea(_campos.map(x => e[x]),null,fnId);
-        });
-        tabla += "</tbody></table>";
-
-        donde.innerHTML = tabla;
-        if (Fn) rogAsigna("#"+donde.id+" .rogId","onclick",Fn);
-    } else {
-        donde.innerHTML = "<h3>No hay " +caption+ "</h3>"
-    }
+function domCelda(valor,clase = "") { 
+    let _valor = def(valor);
+    return domTxt(
+        (typeof _valor === "object" ? _valor.valor : _valor) || "",
+        clsComp(_valor,clase)
+    );  
 }

@@ -3,13 +3,38 @@
 body {
 	margin: 0;
 
+    background-color: var(--clrFnd);
+    color: var(--clrTxt);
+
     box-sizing: border-box;
+    --sombra: 3px 3px 18px black;
+	--bezier: cubic-bezier(0.18, 0.89, 0.32, 1.28);
     font-family: 'Raleway', sans-serif;
+}
+
+ul, ol {
+	background-color: var(--clrFndUL);
+	color: var(--clrTxtUL);
+    box-shadow: var(--sombra);
+    border-radius: 0 0 25px 0;
+    line-height: 150%;
+    padding: 1.5rem;
+}
+
+li:hover {
+  color: var(--clrTxtChx);
+  background-color: var(--clrFndChx);    
+}
+
+nav {
+	background-color: var(--clrFndObj);
+	color: var(--clrTxtObj);
+    padding: 5px 10px;
 }
 
 .fles {
     display: flex;
-    align-content: space-between;
+    justify-content: space-between;
 }
 
 label {
@@ -32,8 +57,8 @@ img {
 	}
 
 	.rogBtn {
-		background-color: var(--clrFndBtn);
-		color: var(--clrTxtBtn);
+		background-color: var(--clrFndObj);
+		color: var(--clrTxtObj);
 		border: none;
 		padding: 10px 20px;
 		text-align: center;
@@ -43,8 +68,9 @@ img {
 		cursor: pointer;
 	}
 
-    .rogBtn:hover {
+    .rogBtn:enabled:hover {
 		font-weight: bolder;
+        box-shadow: var(--sombra);
 	}
 
     .rogBtn:disabled {
@@ -54,15 +80,6 @@ img {
 .rogIdMenu {
     height: 3em;
 }
-
-	.buscable {
-		color: lightcyan;
-		background-color: black;
-		background-image: url('searchicon.png');
-		background-position: 10px 10px;
-		background-repeat: no-repeat;
-		padding-left: 40px;
-	}
 
 .espera {
     cursor: wait;
@@ -74,62 +91,124 @@ img {
 		width: 100%;
 	}
 
+    thead {
+        position: sticky;
+    }
+
 	th, td {
-		text-align: left;
 		padding: 8px;
 	}
 
 	tr:nth-child(even){background-color: #f2f2f2}
 
 	th {
-		background-color: var(--objFondo);
-		color: var(--objLetra);
+		background-color: var(--clrFndObj);
+		color: var(--clrTxtObj);
 	}
 
 	.trGrupo {
-      font-size: 1.5;
+      font-size: 125%;
       vertical-align: bottom;
-      background-color: var(--objFondo);
-      color: var(--objLetra);
+      background-color: var(--clrFndObj);
+      color: var(--clrTxtObj);
       opacity: .75;
       cursor: row-resize;
     }
 
 	/* M O D A L */
 	.rogModal {
-		display: none; /* Hidden by default */
-		position: fixed; /* Stay in place */
-		z-index: 99; /* Sit on top */
+		display: none; 
+
+		position: fixed;
 		left: 0;
 		top: 0;
-		width: 100%; /* Full width */
-		height: 100%; /* Full Height */
-		overflow: auto; /* Enable scroll if needed */
-		background-color: rgb(0,0,0); /* Fallback color */
-		background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+		width: 100%; 
+		height: 100%; 
+		z-index: 99; 
+
+		overflow: auto;
+		background-color: rgba(0,0,0,0.4); 
+
+        align-items: center;
 	}
+
+    .rogModal.activa {
+        display: flex;
+    }
 
 	.cntModal {
 		background-color: #fefefe;
-		margin: 5% auto; /* 5% from the top and centered */
+		margin: 5% auto; 
 		padding: 20px;
 		border: 1px solid #888;
 		width: 90%;
 	}
 
 	.rogCierraModal {
-		color: #aaa;
-		float: right;
-		font-size: 28px;
-		font-weight: bold;
-		cursor: pointer;
+		position: fixed;
+		top:       1rem;
+		right:     1rem;
+    
+		z-index:    100;
+	
+		color:      white;
+		text-align: right;
+		cursor:   pointer;
+		font-size:    3em;
+		opacity:       .3;
+		transition: opacity .85s ease-in-out;
 	}
 
 	.rogCierraModal:hover, .rogCierraModal:focus {
-		color: black;
-		text-decoration: none;
-		cursor: pointer;
+		opacity: 1;
 	}
+
+    .rogVnt {
+      position: absolute;
+      box-shadow: var(--sombra);
+      background-color: var(--clrFnd);
+      display: none;
+      overflow: auto;
+    }
+
+    .rogModal .rogVnt {
+      position: relative;
+      display: block;
+    }
+
+    .rogVnt.activa {
+      display: block;
+    }
+
+    .rogVnt header {
+      position: relative;
+      background-color: var(--clrFndObj);
+      color: var(--clrTxtObj);
+      text-align: center;
+      padding: 2px;
+    }
+
+    .rogVnt main {
+      padding: 0.5rem;
+      overflow: auto;
+    }
+
+    .cierraVnt {
+      position: absolute;
+      top: 0.5px;
+      right: 0.75px;
+
+      color: white;
+      background-color: #000;
+      text-align: right;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.85s ease-in-out;
+    }
+
+    .cierraVnt:hover {
+      opacity: 1;
+    }
 
 	/* Footer y Firma */
 footer {
@@ -204,4 +283,25 @@ footer .logo {
 
 .rogCapa3 {
   transition-delay: 1s;
+}
+
+.rogDetBloque {
+	display: none;
+}
+
+/*  Barra de desplazamiento */
+
+::-webkit-scrollbar {
+	background-color: var(--clrFnd);
+}
+
+::-webkit-scrollbar-track {
+	border: 1px solid var(--clrFnd);
+	box-shadow: inset 0 0 2.5px 2px rgba(0,0,0,.5);
+	width: 75%;
+}
+
+::-webkit-scrollbar-thumb {
+	background: linear-gradient(transparent, var(--clrTxt));
+	border-radius: 25px;
 }

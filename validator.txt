@@ -1,0 +1,131 @@
+function myFunction() {
+  var txt = "";
+  if (document.getElementById("id1").validity.rangeUnderflow) {
+    txt = "Value too small";
+  }
+  document.getElementById("demo").innerHTML = txt;
+}
+
+checkValidity()	Returns true if an input element contains valid data.
+setCustomValidity()	Sets the validationMessage property of an input element.
+
+
+validity	Contains boolean properties related to the validity of an input element.
+validationMessage	Contains the message a browser will display when the validity is false.
+willValidate	Indicates if an input element will be validated.
+
+Validity Properties
+The validity property of an input element contains a number of properties related to the validity of data:
+
+Property	Description
+customError	Set to true, if a custom validity message is set.
+patternMismatch	Set to true, if an element's value does not match its pattern attribute.
+rangeOverflow	Set to true, if an element's value is greater than its max attribute.
+rangeUnderflow	Set to true, if an element's value is less than its min attribute.
+stepMismatch	Set to true, if an element's value is invalid per its step attribute.
+tooLong	Set to true, if an element's value exceeds its maxLength attribute.
+typeMismatch	Set to true, if an element's value is invalid per its type attribute.
+valueMissing	Set to true, if an element (with a required attribute) has no value.
+valid	Set to true, if an element's value is valid.
+
+
+function checkFileSize() {
+  var FS = document.getElementById("FS");
+  var files = FS.files;
+
+  // Si hay (por lo menos) un archivo seleccionado
+  if (files.length > 0) {
+     if (files[0].size > 75 * 1024) { // Validar la restricción
+       FS.setCustomValidity("El archivo seleccionado no debe ser mayor a 75KB");
+       return;
+     }
+  }
+  // No hay incumplimiento de la restricción
+  FS.setCustomValidity("");
+}
+
+window.onload = function () {
+  document.getElementById("FS").onchange = checkFileSize;
+}
+
+function checkZIP() {
+  // Para cada país, se define el patrón para el código postal
+  var constraints = {
+    ch : [ '^(CH-)?\\d{4}$', "El código postal de Suiza debe tener cuatro dígitos: p.ej. CH-1950 o 1950" ],
+    fr : [ '^(F-)?\\d{5}$' , "El código postal de Francia debe tener cinco dígitos: p.ej. F-75012 o 75012" ],
+    de : [ '^(D-)?\\d{5}$' , "El código postal de Alemania debe tener cinco dígitos: p-ej. D-12345 o 12345" ],
+    nl : [ '^(NL-)?\\d{4}\\s*([A-RT-Z][A-Z]|S[BCE-RT-Z])$',
+                    "El código postal de Países Bajos debe tener cuatro dígitos, seguidos de dos letras excepto SA, SD y SS" ]
+  };
+
+  // Se lee el ID del país
+  var country = document.getElementById("Country").value;
+
+  // Se obtiene el campo del código postal
+  var ZIPField = document.getElementById("ZIP");
+
+  // Se crea el validador de la restricción
+  var constraint = new RegExp(constraints[country][0], "");
+    console.log(constraint);
+
+
+  // ¡Se hace la revisión!
+  if (constraint.test(ZIPField.value)) {
+    // El código postal cumple la restricción, usamos la API de Restricciones para indicarlo
+    ZIPField.setCustomValidity("");
+  }
+  else {
+    // El código postal no cumple la restricción, usamos la API de Restricciones para
+    // dar un mensaje sobre el formato requerido para este país
+    ZIPField.setCustomValidity(constraints[country][1]);
+  }
+}
+
+window.onload = function () {
+    document.getElementById("Country").onchange = checkZIP;
+    document.getElementById("ZIP").oninput = checkZIP;
+}
+
+regExp = {
+  nb: "^[a-zA-ZáÁÉéíÍÓóúÚÑñüÜ' ]*$",
+  usr: '^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})+$',
+  pwd: { patron: '^([a-z]|\d){8,12}$', flags: 'i'},
+  confirma: null
+}
+
+Array.from(document.querySelectorAll('input')).forEach(x => {
+  if(x.type === "submit") x.onclick = lee;
+  else x.onblur = valida
+})
+
+function lee(e) {
+  e.preventDefault();
+
+  let leyo = true;
+  
+  ["usr","pwd"].forEach(x => {
+    leyo = leyo && valida(document.querySelector("[name="+x+"]"))
+  })
+  
+  alert(leyo ? "Leyó" : "falló la lectura")
+}
+
+function valida(e) {
+  let retorno = false;
+  let valor;
+  let campo;
+  
+  if(e instanceof Event) {
+    valor = e.target.value;
+    campo = e.target.name;
+  } else {
+    valor = e.value;
+    campo = e.name;
+  }
+  if(valor) {
+    let _regExp = new RegExp(regExp.patron || regExp, regExp.flags || "");
+    retorno = _regExp.test(valor)
+  }
+  if(!retorno) e.target.focus();
+  return retorno;
+}

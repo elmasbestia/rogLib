@@ -1,28 +1,15 @@
-/* Paleta de Colores Cuchi */
+/* Paleta de Colores Normal */
 
-* {
-	--clrEnfasis:   #a19e9bff;
-	--clrNav:       #628395ff;
-	--clrFondo:     #d78626ff;
-	--clrTxt:       brown;
-	--cltTxtEnh:    orange;
-	--clrTxtChx:    white;
-	--clrFndChx:    transparent;
-	--clrFotoMarco: white;
-	--clrFndUL:     #aa99e4ff;
-	--clrFndLI:     #fffecbff;
-	--clrTxtLI:     #aa99e4ff;
-	--clrFndBtn:    #F3EED9;
-	--clrTxtBtn:    #824936;
-    --objFondo:     #0047b3;
-    --objLetra:     white;
-}
-
-ul, ol {
-	background-color: var(--clrFndUL);
-}
-
-li {
-	background-color: var(--clrFndLI);
-	color: var(--clrTxtLI);
+:root {
+  --clrEnfasis: #a19e9b;
+  --clrFnd: #fff;
+  --clrTxt: 0c0c0c;
+  --cltTxtEnh: orange;
+  --clrTxtChx: white;
+  --clrFndChx: transparent;
+  --clrFotoMarco: white;
+  --clrFndUL: #a5aab1;
+  --clrTxtUL: #0b6ca0;
+  --clrFndObj: #0047b3;
+  --clrTxtObj: white;
 }

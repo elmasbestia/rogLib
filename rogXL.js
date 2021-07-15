@@ -1,14 +1,15 @@
 // Librería para manejar Hojas XL con js-xlsx
 
 const XL = require('js-xlsx');
-
-require('dotenv').config();
+const lib = XL.utils;
 
 class Libro {
     constructor(nbArch) {
         console.log("Abrir Libro ", nbArch)
         this._nb = nbArch;
         this.wb = abreXL(nbArch);
+        this.proxHoja = proxHoja.call(this);
+        this.xHoja = 0;
     }
     
     get nombre() {
@@ -18,18 +19,54 @@ class Libro {
     get hojas() {
         return this.wb.Sheets
     }
-    
+
+    get proximaHoja() {
+        const prox = this.proxHoja.next();
+
+        return prox.done ? null : prox.value;
+    }
+
+    recorre(fn) {
+        recorreLibro(this,fn);
+    }
+
     guarda() {
 	   XL.writeFile(this.wb,this.wb.FILENAME);
+	   /*
+Exporting Workbook for Download
+We need to export the workbook as xlsx binary. Use write function then pass the bookType as xlsx and output Type as binary
+
+var wbout = XLSX.write(wb, {bookType:'xlsx',  type: 'binary'});
+We now have our xlsx binary data on wbout var. However, the correct content type for excel file is octet stream so you’ll need to convert the binary data into octet. We can achieve that by using arrayBuffer, UInt8Array and bit operation like this.
+
+function s2ab(s) { 
+                var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
+                var view = new Uint8Array(buf);  //create uint8array as viewer
+                for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
+                return buf;    
+}
+We’re going to utilize Filesaver.js and Blob to handle the file saving for cross browser support. Use saveAs() function and create a new Blob object from octet array. Set the content type as octet-stream. follow by excel file naming that you would like.
+
+$("#button-a").click(function(){
+       saveAs(new Blob([s2ab(wbout)],{type:"application/octet-stream"}), 'test.xlsx');
+});
+    */
     }
 }
 
 class Hoja {
     constructor(wb,nbHoja) {
-        this.libro = typeof wb === "string" ? this.libro = new Libro(wb) : wb;
-        this._nb = isNaN(nbHoja) ? nbHoja : this.libro.wb.SheetNames[nbHoja];
-
-        this.datos = this.libro.wb.Sheets[this._nb];
+        this.libro = wb;
+        this.nb = _nbHoja(this.libro,nbHoja);
+        creaHoja(this.libro,this.nb);
+    }
+    
+    set libro (wb) {
+        this._libro = typeof wb === "string" ? new Libro(wb) : wb
+    }
+    
+    get libro () {
+        return this._libro;
     }
     
     get nombre() {
@@ -41,16 +78,12 @@ class Hoja {
         return _celda ? _celda.v : null;
     }
     
-    celda(col,fila) {
-        return new Celda(this.datos, col, fila);
+    celda(col,fila,valor) {
+        return new Celda(this, col, fila, valor);
     }
         
     fila(fila) {
         return Fila(this.datos,fila)
-    }
-
-    libro() {
-        return this.libro;
     }
     
     primeraFila() {
@@ -59,7 +92,21 @@ class Hoja {
     }
     
     get celdas() {
-        return this.datos;
+        return this.libro.wb.Sheets[this.nb]
+    }
+    
+    set celdas(valores) {
+        this.libro.wb.Sheets[this.nb] = valores;
+	    var ws = XLSX.utils.aoa_to_sheet(ws_data);
+	    this.libro.wb.Sheets["Test Sheet"] = ws;
+    }
+
+    recorre(fn) {
+        return recorreHoja(this,fn);
+    }
+    
+    limpia() {
+        this.celdas = {}
     }
     
     graba(titulos) {
@@ -68,22 +115,25 @@ class Hoja {
 }
 
 class Celda {
-    constructor(hoja,col,fila) {
+/*
+Cell Object
+Key	Description
+v	raw value (see Data Types section for more info)
+w	formatted text (if applicable)
+t	cell type: b Boolean, n Number, e error, s String, d Date
+f	cell formula (if applicable)
+r	rich text encoding (if applicable)
+h	HTML rendering of the rich text (if applicable)
+c	comments associated with the cell **
+z	number format string associated with the cell (if requested)
+l	cell hyperlink object (.Target holds link, .tooltip is tooltip)
+s	the style/theme of the cell (if applicable)
+*/
+    constructor(hoja,col,fila,valor) {
         this._hoja = hoja;
-        if(fila === undefined) {
-            this._col = colDe(col);
-            this._fila = filaDe(col);
-        } else {
-            this._col = letraCol(col);
-            this._fila = fila;
-        }
-        let _obj = _celda(hoja,col,fila);
-        if(_obj) {
-            this._obj = _obj;
-        } else {
-            this.obj = {};
-            this.nxst = true;
-        }
+        this.setCoo(col,fila);
+        this._obj = _celda(hoja,col,fila);
+        if(valor !== undefined) this.valor = valor;
     }
     
     get fila() {
@@ -122,10 +172,24 @@ class Celda {
     get proxima() {
         return new Celda(this._hoja,proxCol(this._col),this._fila)
     }
+    
+    get Coo() {
+        return this.fila+this.col
+    }
+    
+    setCoo(col,fila) {
+        if(fila === undefined) {
+            this._col = colDe(col);
+            this._fila = filaDe(col);
+        } else {
+            this._col = letraCol(col);
+            this._fila = fila;
+        }
+    }
 }
 
-function Extension(nbArchivo){
-    var retorno = "";
+function Extension(nbArchivo,porOmision=""){
+    var retorno = porOmision;
     var pos = nbArchivo.lastIndexOf(".");
 
     if (pos >= 0) { retorno = nbArchivo.slice(pos +1) }
@@ -154,11 +218,21 @@ function proxCol(col) {
     return nroCol(col) +1;
 }
 
-function abreXL(nbArch) {
+function abreXL(nbArch,dir="") {
     let _ext = Extension(nbArch);
-    if(_ext) _ext = "";
-    else _ext = ".xls";
-    return XL.readFile((process.env.nbDirBD || "") +nbArch+_ext);
+    return XL.readFile(dir +nbArch +(_ext ? "" : ".xls"));
+}
+
+function creaXL(nbArch) {
+    var wb = XLSX.utils.book_new();
+	wb.Props = {
+                Title: "SheetJS Tutorial",
+                Subject: "Test",
+                Author: "Red Stapler",
+                CreatedDate: new Date()
+        };
+    wb.SheetNames.push("Hoja1");
+    return wb;
 }
 
 function dirCelda(col,fila) {
@@ -166,8 +240,27 @@ function dirCelda(col,fila) {
     return letraCol(col)+fila;
 }
 
+function _nbHoja(libro,nbHoja) {
+    return isNaN(nbHoja) ? nbHoja : (libro.wb.SheetNames[nbHoja] || "Hoja"+(parseInt(nbHoja)+1))
+}
+
+function creaHoja(libro,nb) {
+    let _nb  = _nbHoja(libro,nb);
+    
+    if(!libro.wb.Sheets[_nb]) {
+        libro.wb.Sheets[_nb] = {}
+        libro.wb.SheetNames.push(_nb)
+    }
+    
+    return libro.wb.Sheets[_nb]
+}
+
 function _celda(hoja, col,fila) {
-    return hoja[dirCelda(col,fila)];
+    let _coo = dirCelda(col,fila);
+
+    if(!hoja.celdas[_coo]) hoja.celdas[_coo] = {};
+
+    return hoja.celdas[_coo];
 }
 
 function primeraCelda(datos,fila) {
@@ -254,6 +347,19 @@ function _graba(datos,filaTit) {
     return retorno;
 }
 
+function* proxHoja() {
+    for(this.xHoja = 0; this.xHoja < this.wb.SheetNames.length;++this.xHoja) yield new Hoja(this,this.xHoja);
+}
+
+function recorreLibro(libro,fn) {
+    libro.wb.SheetNames.forEach((nbHoja,xHoja) => fn(new Hoja(libro,xHoja)))
+}
+
+function recorreHoja(hoja,fn) {
+    let _filas = lib.sheet_to_row_object_array(hoja.celdas)
+    return _filas.map(fn);
+}
+
 // .utils.encode_cell, etc.
 //  sheet_to_row_object_array
 
@@ -270,21 +376,6 @@ function Fila(datos,fila) {
     }
     return retorno;    
 }
-*/
-
-/*
-Key 	Description
-v 	raw value (see Data Types section for more info)
-w 	formatted text (if applicable)
-t 	type: b Boolean, e Error, n Number, d Date, s Text, z Stub
-f 	cell formula encoded as an A1-style string (if applicable)
-F 	range of enclosing array if formula is array formula (if applicable)
-r 	rich text encoding (if applicable)
-h 	HTML rendering of the rich text (if applicable)
-c 	comments associated with the cell
-z 	number format string associated with the cell (if requested)
-l 	cell hyperlink object (.Target holds link, .Tooltip is tooltip)
-s 	the style/theme of the cell (if applicable)
 */
 
 /*
@@ -307,20 +398,6 @@ Value 	Error Meaning
 */
 
 /*
-function handrogXLleDrop(e) {
-  e.stopPropagation(); libroXLe.preventDefault();
-  var files = e.dataTransfer.files, f = files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var data = new Uint8Array(e.target.result);
-    var workbook = XLSX.read(data, {type: 'array'});
- 
-    DO SOMETHING WITH workbook HERE 
-  };
-  reader.readAsArrayBuffer(f);
-}
-drop_dom_element.addEventListener('drop', handleDrop, false);
-
 var roa = X.utils.sheet_to_json(workbook.Sheets[sheetName], {header:1});
 
 
@@ -371,39 +448,31 @@ for(var R = range.s.r; R <= range.e.r; ++R) {
 exports.Libro = Libro;
 exports.Hoja = Hoja;
 exports.guarda = guarda;
+exports.lib = lib;
 
 function guarda(htmlTabla,tit,type = 'xlsx') {
-	var wb = XLSX.utils.table_to_book(htmlTabla, {sheet:tit});
+	   XL.writeFile(this.wb,this.wb.FILENAME);
+
+    var wb = XLSX.utils.table_to_book(htmlTabla, {sheet:tit});
 	return XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'});
 }
 
-/*
-Cell Object
-Key	Description
-v	raw value (see Data Types section for more info)
-w	formatted text (if applicable)
-t	cell type: b Boolean, n Number, e error, s String, d Date
-f	cell formula (if applicable)
-r	rich text encoding (if applicable)
-h	HTML rendering of the rich text (if applicable)
-c	comments associated with the cell **
-z	number format string associated with the cell (if requested)
-l	cell hyperlink object (.Target holds link, .tooltip is tooltip)
-s	the style/theme of the cell (if applicable)
-*/
-
+function _libro() {
 /*
 var wb = XLSX.utils.book_new();
 
 wb.Props = {
-                Title: "SheetJS Tutorial",
-                Subject: "Test",
-                Author: "Red Stapler",
-                CreatedDate: new Date(2017,12,19)
+    Title: "SheetJS Tutorial",
+    Subject: "Test",
+    Author: "Red Stapler",
+    CreatedDate: new Date(2017,12,19)
 }
 
 wb.SheetNames.push("Test Sheet");
+*/
+}
 
+/*
 var ws = XLSX.utils.aoa_to_sheet(arregloDeArreglos);
 
 wb.Sheets["Test Sheet"] = ws;

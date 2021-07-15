@@ -1,4 +1,4 @@
-// Elementos de diseño para el objeto rogReco
+/* Elementos de diseño para el objeto rogReco */
 
 * {
   --clrMnuFnd: #f7d794;
@@ -25,17 +25,17 @@
 }
 
 .antReco {
-  background-image: url("../Imagenes/flcIzqClara.png");
+  background-image: url("../Imagenes/flcIzq.svg");
   border-radius: 25px 0 0 25px;
 }
 
 .sigReco {
-  background-image: url("../Imagenes/flcDerClara.png");
+  background-image: url("../Imagenes/flcDer.svg");
   border-radius: 0 25px 25px 0;
 }
 
 .bsqReco {
-	background-image: url("../Imagenes/icnBsqClara.png");
+	background-image: url("../Imagenes/icnBsq.svg");
 }
 
 .numReco {

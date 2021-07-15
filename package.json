@@ -1,0 +1,22 @@
+{
+  "name": "roglib",
+  "version": "1.0.0",
+  "description": "Librería para JS ",
+  "main": "rogLib.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "roglib"
+  },
+  "author": "Rafa Gomez https://rafagomez.neocities.org",
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^3.1.6",
+    "js-xlsx": "^0.8.22",
+    "mongodb": "^3.6.4",
+    "pg": "^8.5.1",
+    "xmlhttprequest": "^1.8.0"
+  }
+}

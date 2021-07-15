@@ -1,0 +1,24 @@
+/* FA Iconos como pseudo elementos */
+
+.awIcono::before {
+	display: inline-block;
+	font-family: "Font Awesome";
+	font-weight: 900;
+	font-style: normal;
+	font-variant: normal;
+	text-rendering: auto;
+	-webkit-font-smoothing: antialiased;
+
+	margin-right: 0.5em; /* (Defecto) */
+
+}
+/*
+sel::before {
+	font-weight: 400 o 900 (Sólido o normal)
+	content: "\f007"
+	
+	margin-right: 0.5em;
+	
+	color:
+}
+*/

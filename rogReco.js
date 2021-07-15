@@ -9,29 +9,37 @@
 	@param aBsq		Arreglo de propiedades para la búsqueda
 */
 
-function rogReco(dom, a, fn, alAzar, aBsq) {
+function rogReco(dom, a, fn, alAzar, aBsq, titulo) {
   let _reco = {};
   let _dom  = objDom(dom);
   let _aBsq = desarma(aBsq);
 
   function irA() {
-    let _x = _reco.act.value;
+    let _x = parseInt(_reco.act.value) || 0;
     mst(_x);
   }
 
   function bsq() {
-    let _exp = new RegExp(_reco.txt.value, "i");
-
-    let _x = toda(a, _reco.x).findIndex((x) =>
-      o(
-        _aBsq.map((e) => x[e]),
-        _exp
-      )
-    );
-    if (_x === -1) alert("Sejo!");
-    else mst(_x + _reco.x + 1);
+    let  _x = bsqTxt();
+      
+    if (_x) mst(_x + _reco.x);
   }
 
+    function bsqTxt(txt = _reco.txt.value) {
+        let _exp = new RegExp(limpiaPlb(txt), "i");
+
+        let _x = toda(a, _reco.x).findIndex((x) =>
+            o(
+            _aBsq.map((e) => x[e]),
+            _exp
+        )) + 1;
+
+        if(_x === 0) alert("¡No hallé '+txt+'!");
+        
+        return _x;
+    }
+    
+    
   function azar() {
     return Math.ceil(Math.random() * a.length);
   }
@@ -46,14 +54,14 @@ function rogReco(dom, a, fn, alAzar, aBsq) {
   }
 
   function o(a, exp) {
-    return a.reduce((si, x) => (si = si || exp.test(x)), false);
+    return a.reduce((si, x) => (si = si || exp.test(limpiaPlb(x))), false);
   }
 
   function mst(x) {
     if (x === 0) x = a.length;
     else if (x > a.length) x -= a.length;
     _reco.act.value = _reco.x = x;
-    fn(a[_reco.x - 1]);
+    _reco.vnt.innerHTML = fn(a[_reco.x - 1]);
   }
 
   function sig() {
@@ -64,12 +72,17 @@ function rogReco(dom, a, fn, alAzar, aBsq) {
     setX(_reco.x - 1);
   }
 
-  ["sig", "ant", "bsq"].forEach(
+  // Inicialización
+  if(!_dom.innerHTML) _dom.innerHTML = tmpReco();
+
+  ["sig", "ant", "bsq", "vnt", "tit"].forEach(
     (x) => (_reco[x] = _dom.querySelector("." + x + "Reco"))
   );
   ["act", "num", "txt"].forEach(
     (x) => (_reco[x] = _dom.querySelector("[name=" + x + "Reco]"))
   );
+
+  if(titulo) _reco.tit.innerHTML = titulo;
 
   _reco.sig.onclick = sig;
   _reco.ant.onclick = ant;
@@ -83,14 +96,46 @@ function rogReco(dom, a, fn, alAzar, aBsq) {
 
   btnDefault(_reco.txt, _reco.bsq);
 
-  setX(alAzar ? azar() : 1);
+  setX(alAzar ? (isNaN(alAzar) ? bsqTxt(alAzar) : (alAzar === true ? azar() : alAzar)) : 1);
+}
+		
+function creaReco(dom,a,fn,aBsq,titulo) {
+	if(dom) {
+		new rogReco(
+			dom,
+			a,
+			fn,
+			true,
+			aBsq,
+			titulo
+		);			
+	} else return (x) => creaReco(x,a,fn,aBsq,titulo);
+}
+
+function tmpReco() {
+return `		
+	
+		<nav class="rogReco">
+			<h3 class="titReco"></h3>
+			<span class="btnReco antReco"></span>
+			<span class="spnReco">nro.</span>
+			<input type="text" name="actReco" class="numReco">
+			<span class="spnReco">de</span>
+			<input type="text" name="numReco" class="numReco" readonly>
+			<span class="btnReco sigReco"></span>
+			<span class="btnReco bsqReco" title="Buscar un texto"></span>
+			<input type="text" name="txtReco">
+		</nav>
+		<div class="vntReco"></div>
+	
+`
 }
 
 /* 
 		U S O
 		
 let reco = new rogReco(
-  document.querySelector(".rogReco"),
+  "domId",
   Llena_Frases(),
   mstFrase,
   true,

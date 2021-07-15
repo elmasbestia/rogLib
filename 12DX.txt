@@ -1,0 +1,732 @@
+// https://www.todojs.com/12-pasos-para-construir-un-componente-web/
+/*
+   1. Diseño de interacción 
+   
+   a. Lista desplegable
+   b. AL pulsar muestra las opciones
+   c. Al seleccionar las opciones se van mostrando en el recuadro
+   d.Se puede escribir y filtrar las opciones
+   e. Hay un checkbox para esoger todas las opciones
+   
+*/
+/*
+   2. Nombre del componente
+   
+   Consideraciones
+*/
+/* 
+
+   3. Cargar el componente
+
+sin más, algo de este tipo:
+
+import './components/todojs-multiselect.js';
+o un simple script.
+
+<script src="components/todojs-multiselect.js"></script>
+
+*/
+/*
+	4. Definir el API
+	
+	Atributos:
+	a. OPEN
+	b. DISABLED
+	c. TABINDEX
+	
+	Propiedades
+	a. disabled
+	b. options
+	c. value
+	
+	Métodos
+	a. open
+	b. close
+	
+	Eventos
+	a. update
+	b. change
+	c. open
+	d. close
+*/
+/*
+	5. DOM y gestión de estado
+	
+	vamos a diferenciar un Light DOM que incluye la etiqueta del componente, sus atributos y las opciones, y un Shadow DOM que contendrá los elementos que se visualizan del componente, como la lista con las opciones, el campo de búsqueda, etc.
+	
+	Hay una sola propiedad interna para evitar un ciclo infinito de "refresh"
+*/
+/*
+	6. Cambios en el light
+*/
+const RECURSIVE_REFRESH = Symbol();
+const RENDER_INITIAL = Symbol();
+const RENDER_REFRESH = Symbol();
+const RENDER_REFRESH_SELECTALL = Symbol();
+
+class rogSelector extends HTMLElement {
+  constructor() {
+    super();
+
+    // private property for avoid circular update
+    this[RECURSIVE_REFRESH] = false;
+
+    // Create Shadow DOMs
+    this.attachShadow({ mode: "open" });
+
+    // Observe Light DOM changes
+    new MutationObserver((mutations) => {
+      let refresh = false;
+      let update = false;
+      let change = false;
+      for (let mutation of mutations) {
+        refresh = mutation.attributeName !== "class";
+        change = mutation.attributeName === "selected";
+        update = mutation.type === "childList";
+      }
+      if (refresh) this[RENDER_REFRESH]();
+      if (update) this.dispatchEvent(new Event("update"));
+      if (change) this.dispatchEvent(new Event("change"));
+    }).observe(this, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["selected"],
+      childList: true,
+      characterData: true
+    });
+
+    this[RENDER_INITIAL]();
+  }
+
+  /*
+	7. Observar los cambios en los atributos
+*/
+  //static
+  get observedAttributes() {
+    return ["open", "disabled"];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "disabled") {
+      if (newValue === "") {
+        this.removeAttribute("open");
+        this.setAttribute("last-tabindex", this.getAttribute("tabindex"));
+        this.removeAttribute("tabindex");
+      } else {
+        this.setAttribute(
+          "tabindex",
+          this.getAttribute("last-tabindex") || "0"
+        );
+      }
+    } else if (name === "open") {
+      if (newValue === "") {
+        if (this.hasAttribute("disabled")) {
+          this.removeAttribute("open");
+        } else {
+          this.shadowRoot
+            .querySelectorAll("#checkboxes p.hidden")
+            .forEach((p) => {
+              p.classList.remove("hidden");
+            });
+          const search = this.shadowRoot.querySelector("#search");
+          search.value = "";
+          search.focus();
+          this.dispatchEvent(new Event("open"));
+        }
+      } else {
+        this.dispatchEvent(new Event("close"));
+      }
+    }
+  }
+
+  /*
+	8. Conectar al DOM anfitrión
+*/
+  connectedCallback() {
+    // Allow focus
+    if (!this.hasAttribute("disabled") && !this.hasAttribute("tabindex")) {
+      this.setAttribute("tabindex", "0");
+    }
+  }
+
+  /*
+	9. Gestionar las propiedades
+	
+*/
+  get disabled() {
+    return this.hasAttribute("disabled");
+  }
+  set disabled(newValue) {
+    if (newValue) {
+      this.setAttribute("disabled", "true");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  get options() {
+    const that = this;
+    return new Proxy([], {
+      get(target, property) {
+        if (property === "length") {
+          return that.querySelectorAll("option").length;
+        }
+        if (property === Symbol.iterator) {
+          const result = [...that.querySelectorAll("option")].map(getOption);
+          return result[Symbol.iterator];
+        }
+        if (typeof property === "string" && isNaN(parseInt(property))) {
+          return Reflect.get(target, property);
+        }
+        return getOption(that.querySelectorAll("option")[property]);
+      },
+      set(target, property, value) {
+        if (property === "length") {
+          return true;
+        }
+        const options = that.querySelectorAll("option");
+        let option = options[property];
+        let newOption = false;
+        if (!option) {
+          option = document.createElement("option");
+          newOption = true;
+        }
+        option.id = value.id || options.length; // uuid();
+        value.value ? (option.value = value.value) : undefined;
+        option.innerText = value.text || "";
+        if (value.selected) {
+          option.setAttribute("selected", "true");
+        } else {
+          option.removeAttribute("selected");
+        }
+        if (newOption) {
+          that.appendChild(option);
+        }
+        return true;
+      },
+      has(target, property) {
+        if (
+          typeof property === "symbol" ||
+          (typeof property === "string" && isNaN(parseInt(property)))
+        ) {
+          return Reflect.has(target, property);
+        }
+        const options = that.querySelectorAll("option");
+        return !!options[property];
+      },
+      deleteProperty(target, property) {
+        const options = that.querySelectorAll("option");
+        const option = options[property];
+        const element = getOption(option);
+        option.parentElement.removeChild(option);
+        return element;
+      }
+    });
+    // local function that return a single option observed object
+    function getOption(el) {
+      return {
+        get id() {
+          return el.id;
+        },
+        set id(newId) {
+          return (el.id = newId);
+        },
+        get value() {
+          return el.value;
+        },
+        set value(newValue) {
+          return (el.value = newValue);
+        },
+        get text() {
+          return el.innerText || undefined;
+        },
+        set text(newText) {
+          return (el.innerText = newText);
+        },
+        get selected() {
+          return el.hasAttribute("selected");
+        },
+        set selected(newSelection) {
+          if (newSelection) {
+            el.setAttribute("selected", "true");
+          } else {
+            el.removeAttribute("selected");
+          }
+        }
+      };
+    }
+  }
+  set options(values) {
+    let child = this.lastElementChild;
+    while (child) {
+      this.removeChild(child);
+      child = this.lastElementChild;
+    }
+    values.forEach((value) => this.options.push(value));
+  }
+
+  get value() {
+    const that = this;
+    return new Proxy([], {
+      get(target, property) {
+        if (property === "length") {
+          return that.querySelectorAll("option[selected]").length;
+        }
+        if (property === Symbol.iterator) {
+          const result = [...that.querySelectorAll("option[selected]")].map(
+            (e) => e.value
+          );
+          return result[Symbol.iterator];
+        }
+        if (typeof property === "string" && isNaN(parseInt(property))) {
+          return Reflect.get(target, property);
+        }
+        return that.querySelectorAll("option[selected]")[property].value;
+      },
+      set(target, property, value) {
+        if (property === "length") {
+          return true;
+        }
+        that
+          .querySelector(`option[value="${value}"]`)
+          .setAttribute("selected", "true");
+        return true;
+      },
+      has(target, property) {
+        if (
+          typeof property === "symbol" ||
+          (typeof property === "string" && isNaN(parseInt(property)))
+        ) {
+          return Reflect.has(target, property);
+        }
+        return !!that.querySelectorAll("option[selected]")[property];
+      },
+      deleteProperty(target, property) {
+        if (
+          typeof property === "symbol" ||
+          (typeof property === "string" && isNaN(parseInt(property)))
+        ) {
+          return Reflect.deleteProperty(target, property);
+        }
+        that
+          .querySelectorAll("option[selected]")
+          [property].removeAttribute("selected");
+        return true;
+      }
+    });
+  }
+  set value(values) {
+    const options = this.querySelectorAll("option");
+    for (let n = 0; n < options.length; n++) {
+      if (values.indexOf(options[n].value) === -1) {
+        options[n].removeAttribute("selected");
+      } else {
+        options[n].setAttribute("selected", "true");
+      }
+    }
+  }
+
+  /*
+	10. Los Métodos
+*/
+
+  open() {
+    this.setAttribute("open", "true");
+  }
+  close() {
+    this.removeAttribute("open");
+  }
+
+  /*
+	11. Entregar el contenido
+*/
+
+  // create the base shadow DOM content
+  [RENDER_INITIAL]() {
+    // Shadow DOM Style
+    this.shadowRoot.innerHTML = tmpSelector();
+
+    const selection = this.shadowRoot.querySelector("#selection");
+    const dropdown = this.shadowRoot.querySelector("#dropdown");
+    const search = this.shadowRoot.querySelector("#search");
+    const checkboxes = this.shadowRoot.querySelector("#checkboxes");
+    const selectAll = this.shadowRoot.querySelector("#selectAll");
+
+    // close when blur
+    this.addEventListener("blur", () => {
+      this.removeAttribute("open");
+    });
+
+    // open with enter or arrow down
+    this.addEventListener("keydown", (evt) => {
+      if (
+        (evt.key === "Enter" || evt.key === "ArrowDown") &&
+        !this.hasAttribute("open")
+      ) {
+        this.setAttribute("open", "true");
+      } else if (evt.key === "Escape") {
+        this.removeAttribute("open");
+      }
+    });
+
+    // open with mouse
+    selection.addEventListener("click", () => {
+      if (this.hasAttribute("open")) {
+        this.removeAttribute("open");
+      } else {
+        this.setAttribute("open", "true");
+      }
+    });
+
+    // filter
+    search.addEventListener("keyup", (evt) => {
+      if (evt.key === "Enter") {
+        selectAll.click();
+        return evt.preventDefault();
+      }
+      filter();
+    });
+    search.addEventListener("change", filter);
+    search.addEventListener("search", filter);
+    const that = this;
+    function filter() {
+      const paragraphs = checkboxes.querySelectorAll("p");
+      const text = search.value.toLowerCase();
+      for (let n = 0; n < paragraphs.length; n++) {
+        const p = paragraphs[n];
+        if (p.innerText.toLowerCase().search(text) === -1) {
+          p.classList.add("hidden");
+        } else {
+          p.classList.remove("hidden");
+        }
+      }
+      that[RENDER_REFRESH_SELECTALL]();
+    }
+
+    // dropdown keys
+    dropdown.addEventListener("keydown", (evt) => {
+      if (evt.key === "ArrowDown") {
+        const focus = dropdown.querySelector("input:focus");
+        if (focus) {
+          const next = focus.parentElement.nextElementSibling;
+          if (next) {
+            next.querySelector("input").focus();
+          } else {
+            search.focus();
+          }
+        } else {
+          dropdown.querySelector("input:nth-of-type(2)").focus();
+        }
+        evt.preventDefault();
+      } else if (evt.key === "ArrowUp") {
+        const focus = dropdown.querySelector("input:focus");
+        if (focus) {
+          if (focus === search) {
+            checkboxes.querySelector("p:last-of-type input").focus();
+          } else {
+            const previous = focus.parentElement.previousElementSibling;
+            if (previous) {
+              previous.querySelector("input").focus();
+            } else {
+              search.focus();
+            }
+          }
+        } else {
+          checkboxes.querySelector("p:last-of-type input").focus();
+        }
+        evt.preventDefault();
+      } else if (evt.key === "Enter" && evt.target.type === "checkbox") {
+        evt.target.click();
+      }
+    });
+
+    // Dropdown click
+    dropdown.addEventListener("click", (evt) => {
+      if (evt.target.type === "checkbox") {
+        this[RECURSIVE_REFRESH] = true;
+
+        if (evt.target.id === "selectAll") {
+          const checked = evt.target.checked;
+          checkboxes
+            .querySelectorAll("p:not(.hidden) input.option")
+            .forEach((i) => {
+              i.checked = checked;
+              if (checked) {
+                this.querySelector(`#${i.id}`).setAttribute("selected", "true");
+              } else {
+                this.querySelector(`#${i.id}`).removeAttribute("selected");
+              }
+            });
+          evt.cancelBubble = true;
+          return;
+        }
+
+        if (evt.target.checked) {
+          this.querySelector(`#${evt.target.id}`).setAttribute(
+            "selected",
+            "true"
+          );
+        } else {
+          this.querySelector(`#${evt.target.id}`).removeAttribute("selected");
+        }
+        evt.cancelBubble = true; // Cancel bubble event
+      }
+    });
+
+    this[RENDER_REFRESH]();
+  }
+
+  [RENDER_REFRESH]() {
+    // Elements
+    const selected = this.shadowRoot.querySelector("#selected");
+    const options = this.querySelectorAll("option");
+    const checkboxes = this.shadowRoot.querySelector("#checkboxes");
+
+    // Update
+    let text = "";
+    for (let n = 0; n < options.length; n++) {
+      text += options[n].hasAttribute("selected")
+        ? options[n].innerText + "; "
+        : "";
+    }
+    selected.innerText = text;
+
+    // Avoid circular update (from shadow DOM to light DOM to shadow DOM)
+    if (this[RECURSIVE_REFRESH]) {
+      this[RECURSIVE_REFRESH] = false;
+    } else {
+      // Remove all elements
+      let child = checkboxes.lastElementChild;
+      while (child) {
+        checkboxes.removeChild(child);
+        child = checkboxes.lastElementChild;
+      }
+
+      // Get LightDOM options
+      for (let n = 0; n < options.length; n++) {
+        // Put an id if it's missing
+        if (!options[n].id) {
+          options[n].id = "t" + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Create a new checkox
+        const paragraphElement = document.createElement("p");
+        paragraphElement.classList.add("group");
+        paragraphElement.innerHTML = `
+        <input
+          type="checkbox"
+          class="option"
+          id="${options[n].id}"
+          ${options[n].hasAttribute("selected") ? `checked` : ``}
+        >
+        <label class="mark" for="${options[n].id}"></label>
+        <label class="label" for="${options[n].id}">${options[n].text}</label>
+    `;
+        checkboxes.appendChild(paragraphElement);
+      }
+    }
+    this[RENDER_REFRESH_SELECTALL]();
+  }
+
+  [RENDER_REFRESH_SELECTALL]() {
+    // Elements
+    const selectAll = this.shadowRoot.querySelector("#selectAll");
+    const checkboxes = this.shadowRoot.querySelector("#checkboxes");
+    const checked = checkboxes.querySelectorAll(
+      "p:not(.hidden) input.option:checked"
+    ).length;
+    const visible = checkboxes.querySelectorAll("p:not(.hidden) input.option")
+      .length;
+    // Update
+    selectAll.checked = checked === visible && checked !== 0;
+  }
+
+  /*
+	12. Personalizar
+*/
+}
+
+function tmpSelector() {
+  return `
+<link rel="stylesheet"
+      href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+<style>
+  :host {
+    display            : inline-block;
+    position           : relative;
+    font-family        : Roboto, Arial, sans-serif;
+    width              : 24em;
+    color              : #000;
+    background-color   : #FFF;
+  }
+  :host([disabled]) #selection #selected {
+    background-color   : var(--todojs-disabled-bg-color, lightgray);
+    mix-blend-mode     : multiply;
+  }
+  #selection {
+    position           : relative;
+    cursor             : pointer;
+    min-width          : 14em;
+    width              : 100%;
+    height             : 2em;
+    border             : 1px solid lightgray;
+    background-color   : inherit;
+  }
+  #selection #selected {
+    position           : absolute;
+    top                : 0;
+    left               : 0;
+    right              : 0;
+    bottom             : 0;
+    padding            : 0.4em 30px 0.4em 0.4em;
+    white-space        : nowrap;
+    overflow           : hidden;
+    text-overflow      : ellipsis;
+  }
+  #selection #selected:after {
+    position           : absolute;
+    content            : "";
+    top                : calc(1em - 3px);
+    right              : 10px;
+    width              : 0;
+    height             : 0;
+    border-width       : 6px;
+    border-style       : solid;
+    border-color       : #000 transparent transparent transparent;
+  }
+  :host([open]) #selection #selected:after {
+    border-color       : transparent transparent #000 transparent;
+    top                : calc( 1em - 8px);
+  }
+  #dropdown {
+    display            : none;
+    left               : 0;
+    right              : 0;
+    top                : auto;
+    width              : 100%;
+    min-width          : 14em;
+    max-height         : 14em;
+    overflow-x         : hidden;
+    overflow-y         : auto;
+    position           : absolute;
+    background-color   : inherit;
+    border             : solid lightgray;
+    border-width       : 0 1px 1px 1px;
+    z-index            : 20;
+  }
+  :host([open]) #dropdown {
+    display            : block;
+  }
+  #search {
+    position           : absolute;
+    height             : 1.6em;
+    width              : calc( 100% - 36px - 1em);
+    margin-top         : -0.35em;
+    border             : 0;
+    color              : inherit;
+    background-color   : inherit;
+    font-family        : inherit;
+    font-size          : inherit;
+  }
+  #search:focus {
+    outline            : none;
+  }
+  #search::-webkit-input-placeholder,
+  #search::placeholder {
+    color              : inherit;
+    opacity            : 0.4;
+    font-style         : italic;
+  }
+  #dropdown .group {
+    display            : block;
+    position           : relative;
+    height             : 1em;
+    margin             : 0;
+    padding            : 0.5em 2em;
+    font-size          : 1em;
+    -webkit-user-select: none;
+    -moz-user-select   : none;
+    -ms-user-select    : none;
+    user-select        : none;
+   }
+  #dropdown .group.hidden {
+    display            : none;
+  }
+  #dropdown .group .option {
+    position           : absolute;
+    opacity            : 0;
+    cursor             : pointer;
+    height             : 0;
+    width              : 0;
+  }
+  #dropdown .group .mark {
+    cursor             : pointer;
+    position           : absolute;
+    top                : 0.5em;
+    left               : 0.5em;
+    height             : 1em;
+    width              : 1em;
+    background-color   : var(--todojs-mark-bg-color, #eee);
+    z-index            : 20;
+  }
+  #dropdown .group .option:checked ~ .mark {
+    background-color   : var(--todojs-mark-checked-bg-color, #2196F3);
+  }
+  #dropdown .group:hover .option ~ .mark ~ .label {
+    background-color   : var(--todojs-label-hover-bg-color, #eee);
+  }
+  #dropdown .group .option:focus ~ .mark ~ .label {
+    background-color   : var(--todojs-label-focus-bg-color, lightgrey);
+  }
+  #dropdown .group .mark:after {
+    content            : "";
+    position           : absolute;
+    display            : none;
+  }
+  #dropdown .group .option:checked ~ .mark:after {
+    display            : block;
+  }
+  #dropdown .group .mark:after {
+    left               : 0.35em;
+    top                : 0.1em;
+    width              : 0.2em;
+    height             : 0.5em;
+    border-style       : solid;
+    border-color       : var(--todojs-mark-color, white);
+    border-width       : 0 2px 2px 0;
+    -webkit-transform  : rotate(45deg);
+    -ms-transform      : rotate(45deg);
+    transform          : rotate(45deg);
+  }
+  #dropdown .group .label {
+    cursor             : pointer;
+    display            : block;
+    position           : absolute;
+    height             : 1em;
+    top                : 0;
+    left               : 0;
+    right              : 0;
+    padding            : 0.5em 2em;
+  }
+  #dropdown .group.select-all {
+    border-bottom      : 1px dotted darkgray;
+  }
+</style>
+<div id="selection">
+  <div id="selected"></div>
+</div>
+<div id="dropdown">
+  <p class="group select-all">
+    <input type="checkbox" id="selectAll" class="option">
+    <label for="selectAll" class="mark"></label>
+    <input type="search" id="search" placeholder="escribe aquí para filtrar">
+  </p>
+  <div id="checkboxes"></div>
+</div>`;
+}
+
+if (!customElements.get("rog-selector"))
+  customElements.define("rog-selector", rogSelector);
+
+console.log("Crea obj")
+let obj = document.querySelector("rog-selector");
+console.log(obj)

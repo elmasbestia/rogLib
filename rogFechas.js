@@ -48,7 +48,7 @@ function rogFecha(ano, mes, dia) {
         return retorno;
     }
 
-    this.toString = () => fFmt("", fecha)
+    this.toString = () => fFmt("rev", fecha)
 
     //            ESTOS MÉTODOS MODIFICAN EL VALOR DEL OBJETO
     this.siguiente = () => {
@@ -126,23 +126,6 @@ function rogFecha(ano, mes, dia) {
         return new Date(fecha.getFullYear(),fecha.getMonth(),1)
     }
     function ayer () { return fResta(1, hoy()) }
-    function creaFecha(ano, mes, dia) {
-        // Devuelve un objeto fecha a partir de los parámetros enviados
-        // si no se envía nada, devuelve la fecha de hoy
-        var fecha;
-        
-        if (mes === undefined) {
-            if (ano === undefined) { fecha = hoy() }
-            else {
-                if (typeof(ano) === "object") fecha = ano instanceof Date ? ano : ano.fecha()
-                else {fecha = new Date(ano) }
-            }
-        } else {
-            if (ano === undefined) {fecha = new Date(ano,mes)} // (Año, mes)
-            else { fecha = new Date(ano, mes, dia || 1) }
-        }
-        return fecha;
-    }
     function getDiaSemana(corto = false,f) {
         var retorno = "";
         retorno = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][f.getDay()];
@@ -160,34 +143,6 @@ function rogFecha(ano, mes, dia) {
         return corto ? retorno.slice(0,3) : retorno;
     }
 
-    function TF(ano = new Date()) {
-        let _ano = sacaAno(ano)
-
-        if(!_TF[_ano]) _TF[_ano] = creaTF(_ano)
-        return _TF[_ano]
-    }
-
-    function creaTF(ano = new Date()) {
-        let _ano = sacaAno(ano)
-
-        function vsDelAno(_ano) {
-            // Compara la fecha con la Tabla de Efemérides
-            return creaFecha(ano +SanViernes()[sacaAno(ano)]);
-        }
-
-        // Viernes Santo
-        let VS = vsDelAno(_ano);
-        // Lun y Mar de Carnaval, Jue y Vie Santos con relación al Viernes Santo
-        let retorno = [-46, -45, -1, 0].map(x => fFmt("rev",fSuma(x, VS)))
-        
-        retorno = retorno.concat(fiestasFijas().map(x => _ano+x))
-
-        return retorno;
-    }
-
-    function fiestasFijas(ano) {
-        return [ '-01-01', '-04-19', '-05-01', '-06-24', '-07-05', '-07-24', '-10-12', '-12-24', '-12-25', '-12-31' ]
-    }
 
     function sacaAno(wf) {
         switch(typeof wf) {
@@ -207,20 +162,16 @@ function rogFecha(ano, mes, dia) {
         }
     }
 
-    function esFechaLaboral(f = new Date()) {
-        // Booleana: Determina si una fecha es existe dentro de la Tabla de Días Feriados (TF)      
-		if((f.getDay() === 0) || (f.getDay() === 6)) return false
-        return !TF(sacaAno(f)).includes(fFmt("rev",f))
-    }
-
     function fSuma(nDias = 1, f) {
         // Devuelve una fecha a partir de la actual más  @param nDias
         return new Date(f.getFullYear(),f.getMonth(),f.getDate() +nDias);
     }
+
     function fResta(nDias =1, f) { return fSuma(-nDias,f) }
     function igual(f,...otraF) {
         return fFmt("",f) === fFmt("",creaFecha(...otraF))
     }
+
     function lapsoLaboral(desde,hasta, traza) {
         // Devuelve una fecha o un entero según:
         // Si "hasta" es una fecha: devuelve el número de días hábiles desde la fecha actual hasta "hasta"
@@ -250,6 +201,48 @@ function rogFecha(ano, mes, dia) {
             } while (retorno <= hasta);
             return cant
         }
+    }
+
+    // Feriados
+
+    function TF(ano = new Date()) {
+        let _ano = sacaAno(ano)
+
+        if(!_TF[_ano]) _TF[_ano] = creaTF(_ano)
+        return _TF[_ano];
+    }
+
+    function vsDelAno(ano = (new Date()).getFullYear()) {
+        // Compara la fecha con la Tabla de Efemérides
+        return creaFecha(ano +SanViernes()[sacaAno(ano)]);
+    }
+
+    function creaTF(ano = new Date()) {
+        let _ano = sacaAno(ano)
+
+        return [...fiestasFijas(), ...Carnaval(_ano),...SemanaSanta(_ano)].sort()
+    }
+
+    function fiestasFijas(ano = (new Date).getFullYear()) {
+        return [ '-01-01', '-04-19', '-05-01', '-06-24', '-07-05', '-07-24', '-10-12', '-12-24', '-12-25', '-12-31' ].map(x => ano+x)
+    }
+
+    function Carnaval(ano = (new Date).getFullYear()) {
+        let VS = vsDelAno(ano);
+        // Lun y Mar de Carnaval, con relación al Viernes Santo
+        return [-46, -45].map(x => fFmt("rev",fSuma(x, VS)))
+    }
+
+    function SemanaSanta(ano = (new Date).getFullYear()) {
+        let VS = vsDelAno(ano);
+        // Jue y Vie Santos con relación al Viernes Santo
+        return [-1, 0].map(x => fFmt("rev",fSuma(x, VS)))
+    }
+
+    function esFechaLaboral(f = new Date()) {
+        // Booleana: Determina si una fecha existe dentro de la Tabla de Días Feriados (TF)      
+		if((f.getDay() === 0) || (f.getDay() === 6)) return false // Fin de Semana
+        return !TF(sacaAno(f)).includes(fFmt("rev",f))
     }
 
 function SanViernes() {

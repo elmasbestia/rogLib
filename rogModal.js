@@ -1,59 +1,73 @@
-// Get the modal
-var modal = document.getElementById('myModal');
+let template = document.createElement("template");
 
-// Get the image and insert it inside the modal - use its "alt" text as a caption
-var img = document.getElementById('myImg');
-var modalImg = document.getElementById("img01");
-var captionText = document.getElementById("caption");
-img.onclick = function(){
-    modal.style.display = "block";
-    modalImg.src = this.src;
-    captionText.innerHTML = this.alt;
+template.innerHTML = `
+	<style>
+    .rogModal {
+       /* display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100% /* Full Height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+      }
+    .cntModal {
+      background-color: #fefefe;
+      margin: 5% auto; /* 5% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+    }
+    .rogCierraModal {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .rogCierraModal:hover, .rogCierraModal:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+	</style>
+	
+	<div id="vntVotante"> <!-- class="rogModal"> --!>
+		<div class="cntModal">
+		  <span class="rogCierraModal">&times;</span>
+    </div>
+  </div>
+`
+
+class rogModal extends HTMLElement {
+	constructor () {
+		super();
+		this.attachShadow({mode: 'open'});
+		this.shadowRoot.appendChild(template,template.content.cloneNode(true));
+	}
+	
+	muestra() {
+		// this.shadowRoot.querySelector(".rogModal");
+    this.style.display = "block";			
+	}
+	
+	connectedCallback() {
+		let a = this.shadowRoot.querySelector(".rogModal")
+		console.log("Primer nivel:")
+		console.dir(a)
+//		this.shadowRoot.querySelector(".rogCierraModal").addEventListener("click", () => this.style.display = "none");
+			
+		//if(this.getAttribute(x)) this.shadowRoot.querySelector(".notify-container").chepacua = this.getAttribute(x)
+	}
 }
 
-// Get the <span> element that closes the modal
-var span = document.getElementsByClassName("close")[0];
+window.customElements.define('rog-modal', rogModal);
 
-// When the user clicks on <span> (x), close the modal
-span.onclick = function() { 
-    modal.style.display = "none";
-}
+/* Uso:
 
-// M O D A L
-function openModal() {
-  document.getElementById('myModal').style.display = "block";
-}
+<rog-modal ud="nb ventana">
 
-function closeModal() {
-  document.getElementById('myModal').style.display = "none";
-}
-
-var slideIndex = 1;
-showSlides(slideIndex);
-
-function plusSlides(n) {
-  showSlides(slideIndex += n);
-}
-
-function currentSlide(n) {
-  showSlides(slideIndex = n);
-}
-
-function showSlides(n) {
-  var i;
-  var slides = document.getElementsByClassName("mySlides");
-  var dots = document.getElementsByClassName("demo");
-  var captionText = document.getElementById("caption");
-  if (n > slides.length) {slideIndex = 1}
-  if (n < 1) {slideIndex = slides.length}
-  for (i = 0; i < slides.length; i++) {
-      slides[i].style.display = "none";
-  }
-  for (i = 0; i < dots.length; i++) {
-      dots[i].className = dots[i].className.replace(" active", "");
-  }
-  slides[slideIndex-1].style.display = "block";
-  dots[slideIndex-1].className += " active";
-  captionText.innerHTML = dots[slideIndex-1].alt;
-}
-
+document.querySelector("#nb ventana").muestra()
+*/

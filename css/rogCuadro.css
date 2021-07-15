@@ -1,0 +1,53 @@
+#grupos {
+  display: flex;
+}
+
+.btnGrupo {
+  draggable: true;
+}
+
+#datos {
+  max-width: 30%;
+  display: none;
+}
+
+#datos.activa {
+  display: block;
+}
+
+#container {
+  display: flex;
+}
+
+#cuadro {
+  background-color: green;
+}
+
+.rogCuadro {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 20%;
+  text-align: center;
+}
+
+.rogCuadro_grupo {
+  background-color: #007399;
+  color: var(--objLetra);
+  text-align: center;
+}
+
+.rogCuadro_sub {
+  background-color: var(--objFondo);
+  color: var(--objLetra);
+  text-align: center;
+}
+
+.rogCuadro_tit {
+    font-weight: bold;
+    border-bottom: 1px solid black;
+}
+
+.rogCuadro_tot {
+    font-weight: bold;
+    border-bottom: 1px solid black;
+}

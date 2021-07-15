@@ -1,13 +1,45 @@
+/*
+    Objeto "buscador"
+    
+    Presenta una lista con las opciones de búsqueda, un texto para especificar valores de búsqueda y el botón correspondiente
+    
+    @param dom es el elemento donde se inserta el objeto
+    @param opciones es un arreglo de:
+        Una cadena de caracteres que se muestra como opción y se envía a la función
+        o
+        Un objeto con:
+            txt:   el texto de la opción
+            valor: lo que se pasa a la función (Si se omite, se usa txt)
+            sinValBsq: Si es verdadero, esta opción no necesita un valor de búsqueda.
+            
+    @param fn es la función que se ejecuta para buscar. Recibe los argumentos "que" y "valor"
+    
+    Además permite mostrar un mensaje a través del método "Espera" (Normalmente de un proceso en ejecución)
+*/
+
 function rogBsq(dom, opciones, fn) {
-	const bsq = document.createElement("DIV");
-		
-	const btnBsq = creaBtn();
-	const valBsq = creaVal();
-	const opcBsq = creaOpc(opciones);
+	const bsq = {
+        dom: document.createElement("DIV"),
+		btn: creaBtn(),
+	    val: creaVal(),
+        opc: creaOpc(opciones),
+        fn:  () => fn(...analValor(bsq.que, bsq.valor)),
+
+        que: "",
+        valor: "",
+    }
 	
 	function llamaBsq() {
-		fn(...analValor(slfBsq.que(), slfBsq.valor()));
+        bsq.que   = bsq.opc.value;
+        bsq.valor = bsq.val.value;
+        bsq.fn();
 	}
+    
+    function bsqObj(obj) {
+        bsq.que = Object.keys(obj)[0];
+        bsq.valor = obj[bsq.que]
+        bsq.fn();
+    }
     
     function analValor(parm,texto) {
         if(texto.includes("=")) {
@@ -15,16 +47,22 @@ function rogBsq(dom, opciones, fn) {
         } else return [parm,texto];
     }
 
-    function divEspera() {
+    function creaLstEspera() {
+        retorno = document.createElement("DIV");
+        retorno.id ="lstEspera";
+        return retorno;
+    }
+
+    function creaEspera(msj) {
         retorno = document.createElement("DIV");
         retorno.innerHTML = "<i class='fa fa-spinner fa-spin'></i>";
-        retorno.innerHTML += "<span id='txtEspera'></span>";
+        retorno.innerHTML += "<span id='txtEspera'>"+msj+"</span>";
 
-        retorno.id ="divEspera";
+        retorno.className ="espera";
         modCss(retorno, {
             border: "solid 1px black",
             padding: "15px",
-            display: "none"
+            display: "inline"
         });
         return retorno;
     }
@@ -56,7 +94,6 @@ function rogBsq(dom, opciones, fn) {
 	function creaVal() {
 		let retorno = document.createElement("INPUT");
 		retorno.id="valBsq";
-		btnDefault(retorno,btnBsq);
 		return retorno;
 	}
 	
@@ -66,24 +103,26 @@ function rogBsq(dom, opciones, fn) {
 		retorno.className = "rogBtn";
 		retorno.onclick= llamaBsq;
 		retorno.innerHTML = "<i class='fa fa-search'></i>";
-		retorno.onmouseover = () => { bsq.style.display = "flex"; };
+		retorno.onmouseover = () => { bsq.dom.style.display = "flex"; };
 		return retorno;
 	}
 	
 	function creaDom(dom) {
-		bsq.appendChild(opcBsq);
-		bsq.appendChild(valBsq);
+		bsq.dom.appendChild(bsq.opc);
+		bsq.dom.appendChild(bsq.val);
 
-		bsq.style.display = "none";
-		bsq.className = "rogBtn";
+		bsq.dom.style.display = "none";
+		bsq.dom.className = "rogBtn";
 		
 		let cnt = document.createElement("DIV");
-		cnt.appendChild(bsq);
-		cnt.appendChild(btnBsq);
+		cnt.appendChild(bsq.dom);
+		cnt.appendChild(bsq.btn);
 		cnt.style = "display: flex; alignItems: stretch";
 
 		let vnt = objDom(dom);
-	    vnt.appendChild(divEspera());   // Para mensajes de Espera
+        
+        bsq.dom.lstEspera = creaLstEspera();
+	    vnt.appendChild(bsq.dom.lstEspera);   // Para mensajes de Espera
 		vnt.appendChild(cnt);
 		modCss(vnt,
 		    { display: "flex", // height: "50px", 
@@ -93,20 +132,26 @@ function rogBsq(dom, opciones, fn) {
 		);
 	}
 
-	this.query = () => ({ que: this.que(), valor: this.valor() });
-	this.que = (nbCampo) => nbCampo ? opcBsq.value = nbCampo : opcBsq.value;
-	this.valor = (valor) => valor ? valBsq.value = valor : valBsq.value;
+	this.query = () => ({ que: this.que, valor: this.valor });
+	this.que = (nbCampo) => nbCampo ? bsq.que = nbCampo : bsq.que;
+	this.valor = (valor) => valor ? bsq.valor = valor : bsq.valor;
 	this.Espera = (msj) => {
-        let div = document.getElementById("divEspera");
+        let retorno;
         if(msj) {
-            document.getElementById("txtEspera").textContent = msj;
-            div.style.display = "inline";
+            if(typeof msj === "string") {
+                retorno = creaEspera(msj);
+                bsq.dom.lstEspera.appendChild(retorno);
+            } else {
+                msj.remove();
+            }
         }  else {
-            div.style.display = "none";
+            bsq.dom.lstEspera.children[bsq.dom.lstEspera.children.length -1].remove();
         }
+        return retorno;
 	};
+    this.bsq = bsqObj;
+//    this.fn = fn || (que,valor) => window.find(valor);
 
 	creaDom(dom);
-
-	var slfBsq = this;
+	btnDefault(bsq.val,bsq.btn);
 }

@@ -1,15 +1,15 @@
-// Crea un Formulario a parte de una estructura dada
+// Crea un Formulario a partir de una estructura dada
 
 var _frm, _stru, _url, _metodo;
 
-var _cancela = () => moveCorresponding(_stru, _frm);
-var _agrega  = () => moveCorresponding(regVacio(_stru), _frm);
+var _cancela = () => _frm.reset();
+var _agrega  = () => _frm.reset();
+
+const moveCorr = moveCorresponding;
 
 var _fn = (datos) => console.log("Lectura perdida:", datos);
 
 class rogForm {
-    #autoCierra = false
-    
     constructor (dom, Stru, opcs) {
         _stru = Stru instanceof Array ? Stru : desarma(Stru).map(x => new rogCampo(x,Stru[x]));
 
@@ -74,11 +74,11 @@ class rogForm {
     }
     
     set autoCierra (valor) {
-        this.#autoCierra = valor
+        this.cerrar = valor
     }
 
     get autoCierra () {
-        return this.#autoCierra
+        return this.cerrar;
     }
 
     get cadena() {
@@ -203,38 +203,57 @@ function moveCorresponding(de,a) {
     Mueve elementos de un FORM a un obbjeto o viceversa
     @param de y @param a son el objeto y el formulario o su id
     */
-    let elementos = objDom(a) && objDom(a).elements;
+    let _formaA = objDom(a);
+    let elementos = _formaA && _formaA.elements;
     
-    if(elementos) {         // De datos a form
+    if(elementos) {         // DATOS A FORM
+        if(_formaA.reset) _formaA.reset();          // Pone los valores por defecto en la form
         let valores = rogValores(de);
-        let n = elementos.length;
-        for (let i = 0; i < n ;i++) {
-            let campo = elementos[i]
-            let nbCampo = campo.name;
-            if (nbCampo) {
-                if(campo.type === "radio") campo.checked = (campo.value === valores[nbCampo]);
-                else if(elementos[i].type === "checkbox") {
-                        elementos[i].checked = valores[nbCampo];
-                     } else if (elementos[i].type === "date") elementos[i].value = rogFmt.Fecha(valores[nbCampo])
-                            else elementos[i].value = valores[nbCampo];
-            }
-        }
-    } else {                // De form a datos
-        elementos = objDom(de).elements;
-        valores = rogValores(a);
         
         let n = elementos.length;
         for (let i = 0; i < n ;i++) {
-            let nbCampo = elementos[i].name;
-            if (nbCampo) {
-                if(elementos[i].type === "radio") {
-                    if(elementos[i].checked ) valores[nbCampo] = elementos[i].value;
-                } else if(elementos[i].type === "checkbox") {
-                    valores[nbCampo] = elementos[i].checked;
-                     } else if (elementos[i].type === "date") elementos[i].value = rogFmt.Fecha(valores[nbCampo])
-                            else elementos[i].value = valores[nbCampo];
+            let campo = elementos[i];
+            let nbCampo = campo.name;
+            if (nbCampo && valores[nbCampo]) {
+                if(campo.type === "radio") campo.checked = (campo.value === valores[nbCampo]);
+                else if(campo.type === "checkbox") {
+                    campo.checked = valores[nbCampo];
+                } else if (campo.type === "date") campo.value = rogFmt.Fecha(valores[nbCampo]).amd();
+                  else campo.value = valores[nbCampo];
             }
-        };
+        }
+    } else {                // FORM A DATOS
+        elementos = objDom(de).elements;
+        
+		if(objVacio(a)) {
+			let n = elementos.length;
+			for (let i = 0; i < n ;i++) {
+				let nbCampo = elementos[i].name;
+				if (nbCampo) asignaElemento(a,nbCampo,elementos[i])
+			};
+		} else {
+            elementos = Array.from(elementos).filter(x => x.name);
+			for(nbCampo in a) {
+                let e = elementos.find(x => x.name === nbCampo);
+                if (e) asignaElemento(a,nbCampo,e)
+            }
+		}
+    }
+}
+
+function asignaElemento(a,nbCampo,elemento) {
+    switch (elemento.type) {
+        case "radio":
+            if(elemento.checked ) a[nbCampo] = elementos.value;
+            break;
+        case "checkbox":
+            a[nbCampo] = elemento.checked;
+            break;
+        case "date":
+            a[nbCampo] = rogFmt.Fecha(elemento.value).amd();
+            break;
+        default:
+            a[nbCampo] = elemento.value;
     }
 }
 
@@ -328,7 +347,7 @@ function evalRadio(nb) {
         if(x.checked) retorno = x.value;
     });
     return retorno;
-filter(x => x.name)}
+}
 
 function evalOpcRadio(opcion,valor) {
     if(opcion.checked) return opcion.value;
