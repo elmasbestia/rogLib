@@ -5,34 +5,54 @@ const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 const def = x => x || "";
 
+// Formatos
 const rogFmt = {
     Moneda: new Intl.NumberFormat('VES', {
         style: 'decimal',
-        minimumFractionDigits: 2
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format,
     Ent: new Intl.NumberFormat('VES', {
         style: 'decimal',
-        minimumFractionDigits: 0
+        maximumFractionDigits: 0
     }).format,
     Pc: new Intl.NumberFormat('VES', {
         style: 'percent',
-        minimumFractionDigits: 2
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format,
     Tlf: nro => {
         let _nro = nro.toString();
-        return "(" +_nro.slice(0,3)+") " +_nro.slice(3,6) +" " +_nro.slice(7)
+        return `(${_nro.slice(0,3)}) ${_nro.slice(3,6)}  ${_nro.slice(7)}`
     },
     dd: nro => (nro > 9 ? "" : "0") + nro,
-    Fecha: (f = new Date()) => {
-        f = creaFecha(f);
-        return {
-            amd: () => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
-            dma: () => rogFmt.dd(f.getDate())+"/"+rogFmt.dd(f.getMonth() +1)+"/"+f.getFullYear(),
-            Hora: () => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
-            fSerial: () => f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes()),
-        }
-    },
+    Fecha: rogFmtFecha,
     Lapso: (desde = new Date(), hasta = new Date()) => `Desde el ${rogFmt.Fecha(desde).dma()} hasta el ${rogFmt.Fecha(hasta).dma()}`
+}
+
+function rogFmtFecha (f = new Date()) {
+    /*
+        toString          : Tue Dec 15 2020 13:08:12 GMT-0400 (hora de Venezuela)
+        toDateString      : Tue Dec 15 2020
+        toISOString       : 2020-12-15T17:08:12.901Z
+        toJSON            : 2020-12-15T17:08:12.901Z
+        toLocaleDateString: 15/12/2020
+        toLocaleString    : 15/12/2020 1:08:12 p. m.
+        toUTCString       : Tue, 15 Dec 2020 17:08:12 GMT
+    */
+    f = creaFecha(f);
+    return {
+        amd: () => f.toJSON().slice(0,10),
+        //f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
+        dma: () => f.toLocaleDateString(),
+        //rogFmt.dd(f.getDate())+"/"+rogFmt.dd(f.getMonth() +1)+"/"+f.getFullYear(),
+        am:  () => f.toJSON().slice(0,7),
+        Hora: () => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
+        fSerial: () => limpiaPlb(f.toJSON()),
+        //f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes()),
+        a: () => f.getFullYear(),
+		full: () => f.toJSON()
+    }
 }
 
 function creaFecha(ano, mes, dia) {
@@ -79,6 +99,7 @@ const strCompara = (campo,descendente) =>{
     var menor = -1, mayor = 1;
     var que = campo;
     const comp1 = (a,b) => (def(a[que]) < def(b[que])) ? menor : (def(a[que]) > def(b[que])) ? mayor : 0;
+    
     let _campos = desarma(que);
     function comp(a,b) {
       let i = 0;
@@ -200,10 +221,12 @@ function rogLista(datos,que) {
     return lista;
 }
 
-exports.otraVnt = (url, ancho=600, alto=800) => {
-    if (typeof url === "object") url = url.target.url;
-    window.open(url, "popup", 'width=' +ancho + 'px,height=' + alto + 'px,left=200,top=200');
-    return false;
+function Extension(nbArchivo){
+    var retorno = "";
+    var pos = nbArchivo.lastIndexOf(".");
+
+    if (pos >= 0) { retorno = nbArchivo.slice(pos +1) }
+    return retorno;
 }
 
 exports.nbSerial = (prefijo) => prefijo +rogFmt.fSerial();
@@ -216,3 +239,4 @@ exports.rogFiltra  = rogFiltra;
 exports.accede     = accede;
 exports.conecta    = conecta;
 exports.rogLista   = rogLista;
+exports.Extension  = Extension;

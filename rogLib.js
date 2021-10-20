@@ -22,7 +22,7 @@ const rogFmt = {
         return `(${_nro.slice(0,3)}) ${_nro.slice(3,6)}  ${_nro.slice(7)}`
     },
     dd: nro => (nro > 9 ? "" : "0") + nro,
-    Fecha: fecha => rogFmtFecha(fecha)[fmt](),
+    Fecha: rogFmtFecha,
     Lapso: (desde = new Date(), hasta = new Date()) => `Desde el ${rogFmt.Fecha(desde).dma()} hasta el ${rogFmt.Fecha(hasta).dma()}`
 }
 
@@ -42,11 +42,14 @@ function rogFmtFecha (f = new Date()) {
         //f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1)+"-"+rogFmt.dd(f.getDate()),
         dma: () => f.toLocaleDateString(),
         //rogFmt.dd(f.getDate())+"/"+rogFmt.dd(f.getMonth() +1)+"/"+f.getFullYear(),
-        am:  () => f.getFullYear()+"-"+rogFmt.dd(f.getMonth() +1),
+        am:  () => f.toJSON().slice(0,7),
         Hora: () => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
         fSerial: () => limpiaPlb(f.toJSON()),
         //f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes()),
-        a: () => f.getFullYear()
+        a: () => f.getFullYear(),
+		full: () => f.toJSON(),
+        cool: () => getDiaSemana(true,f) + " " + f.getDate() +" de "+ nbMes(null,f),
+        serio: () => getDiaSemana(null,f) + " " + f.getDate() +" de "+ nbMes(null,f) +" de "+ f.getFullYear()
     }
 }
 
@@ -70,6 +73,23 @@ function creaFecha(ano, mes, dia) {
             else fecha = new Date(ano, mes, dia || 1);
         }
         return fecha;
+}
+
+function getDiaSemana(corto = false,f) {
+  var retorno = "";
+  retorno = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][f.getDay()];
+  return corto ? retorno.slice(0,3) : retorno;
+}
+
+function nbMes(corto = false,f) {
+  // @param corto indica si se devuelve el nombre completo o en tres letras solamente
+  // @param f puede ser una fecha o un número relativo al mes de "fecha", por defecto, es "fecha"
+  var retorno;
+  if (f) {
+      if (typeof f === "number") { f = new Date(fecha.getFullYear(), fecha.getMonth() +f, fecha.getDate())}
+  } else f = this.fecha();
+  retorno = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][f.getMonth()];
+  return corto ? retorno.slice(0,3) : retorno;
 }
 
 function escogeUna(a) {
@@ -132,17 +152,12 @@ const domTxt = (contenido,que,clase,opcs) => "<"+ que +(clase ? " class='" +clas
 
 function creaOpcs(opcs) {
     function nbAtributo(atrib) {
-        return atrib.startsWith("data") ? "data-"+atrib.slice(4) : atrib === "cursor" ? "style.cursor" : atrib;
+        return atrib === "cursor" ? "style.cursor" : atrib;
     }
     
     let retorno = "";
     for(let x in opcs) { retorno += ` ${nbAtributo(x)}= '${opcs[x]}'`}
     return retorno;
-}
-
-function quitaClase(clase) {
-    let x = document.querySelectorAll("."+clase);
-    x.forEach(x => {x.classList.remove(clase)});
 }
 
 function nivelDe(dom) {
@@ -165,6 +180,8 @@ function strCompara(campo,descendente){
         Función que compara dos objetos sobre la base de uno o varios de sus elementos
         @param campo      : es la lista de elementos a comparar
         @param descendente: si es verdadero, la comparación es descendente 
+
+        Uso: para el método "sort" de un arreglo de objetos
     */
     
     var menor = -1, mayor = 1;
@@ -191,7 +208,7 @@ function desarma(lista) {
     // Crea un arreglo a partir de:
     // 1. Una lista de palabras separada por coma y un espacio en una cadena de caracteres: "A, B, C"
     // 2. Un objeto: { A: ..., B: ..., C: ... }
-    // 3. Si @param valores es Un arreglo lo devuelve la referencia correspondiente
+    // 3. Si @param valores es Un arreglo devuelve la referencia correspondiente
 
     let retorno = [];
     if(lista) {
@@ -217,9 +234,9 @@ function Extension(nbArchivo){
     return retorno;
 }
         
-function nbArch(nbArchivo) {
-    let pos = nbArchivo.lastIndexOf(".");
-    return nbArchivo.slice(0,pos);
+function nbArchivo(txt) {
+    let pos = txt.lastIndexOf(".");
+    return txt.slice(0,pos);
 }
 
 function domVacia(dom) {
@@ -232,6 +249,11 @@ function otraVnt(url, ancho=600, alto=800) {
     return false;
 }
 
+function neaVnt(contenido) {
+    var vnt = window.open("");
+    vnt.document.write(contenido);
+}
+  
 function rogAsigna(selector,evento,fn) {
     let arreglo = selector;
     if(typeof selector === "string") {
@@ -277,30 +299,53 @@ function accede(accion,url,fn,datos) {
     let xobj = new XMLHttpRequest();
     let xmlEstado = ["No inicializado", "Conectado", "Recibido", "Procesando", "Listo"];
 	
-	function msjErrorXML(e) {
-		alert(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
+	function retorno(resultado) {
+        if(fn) {
+            fn(typeof resultado === "string" ? 
+                JSON.parse(resultado) : 
+                resultado
+            );
+        } else if(!resultado.fallo) neaVnt(resultado);
+    }
+	
+    function respuestaError({statusText, status}) {
+        return { 
+			fallo: true, 
+			msj: statusText || "No puedo comunicarme con la B.D.", 
+			status 
+		}
+    }
+    
+    function msjError(xobj) {
+        return xobj.responseText.fallo ?
+            (xobj.responseText.msj instanceof Array ? xobj.responseText.msj.join("\n") : xobj.responseText.msj) :
+            xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status;
+    }
+
+	function mstError(e) {
+		alert(msjError(xobj));
+        retorno(xobj.responseText.fallo ? 
+			xobj.responseText : 
+			respuestaError(xobj)
+		);
 	}
+
+    function huboError(xobj) {
+        return (!xobj.status || (xobj.status >= 400)) || xobj.responseText.fallo;
+    }
      
     xobj.accion = accion;
     xobj.url    = url;
-     
+
     xobj.overrideMimeType("application/json");
     xobj.withCredentials = true;
     xobj.open(accion, url, true);
     xobj.setRequestHeader('Content-type','application/json; charset=utf-8');
-    xobj.onerror = msjErrorXML;
-//            xobj.onprogress = (e) => { console.log("Progress: ", e) }
+    xobj.onerror = mstError;
     xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")") };
     xobj.onload = () => {
-		if (xobj.status <= 400) {
-			if(accion === "GET") {
-				fn(JSON.parse(xobj.responseText));
-			} else {
-				fn(JSON.parse(xobj.responseText));
-			}
-		} else {
-			msjErrorXML();
-		}
+		if (huboError(xobj)) mstError()
+        else retorno(xobj.responseText);
 	};
     xobj.send(JSON.stringify(datos));
 }
@@ -362,14 +407,13 @@ function tabTitulos(campos) {
     );
 }
 
-function creaCombo(datos,dom,item) {
-    // Crea el dom de un combo cargado con 
-    // @param datos en el @param dom
+function creaCmb(datos,dom,item) {
+    // Crea el dom de un combo cargado con @param datos en el @param dom
     // Si se omite @param dom se devuelve el codigo HTML correspondiente
     // @param item puede ser:
     // 1. el nombre de un elemento en datos
     // 2. un Objeto { valor: texto } o {valor: nb del valor, texto: nb del texto} con el nombre de los elementos a usar
-    // 3. Si se omite, es el valor en datos
+    // 3. Si se omite, es el valor del elemento en datos
 
     let valor = (x,i) => i;
     let texto = x => x;
@@ -427,6 +471,75 @@ function domCelda(valor,clase = "") {
     let _valor = def(valor);
     return domTxt(
         (typeof _valor === "object" ? _valor.valor : _valor) || "",
-        clsComp(_valor,clase)
+        "td", clsComp(_valor,clase)
     );  
+}
+
+function mstTabla(datos,dom,caption = "",campos = null,Fn = null,nbId="") {
+	let donde = dom ? objDom(dom) : document.createElement("DIV");
+    
+    if(datos.length) {
+        let tabla = "<table><caption><h3>" +caption+ "<sup><span class='badge'>"+datos.length+"</span></sup></h3></caption>";
+        let titulos;
+        let _campos = desarma(campos || datos[0]);
+        let fnId = _campos.indexOf(nbId);
+
+        datos.forEach(e => {
+            if (!titulos) {
+                titulos = tabTitulos(_campos)
+                tabla += titulos+"<tbody>";
+            }
+            tabla += domLinea(_campos.map(x => e[x]),null,fnId);
+        });
+        tabla += "</tbody></table>";
+
+        donde.innerHTML = tabla;
+        if (Fn) rogAsigna("#"+donde.id+" .rogId","onclick",Fn);
+    } else {
+        donde.innerHTML = "<h3>No hay " +caption+ "</h3>"
+    }
+    if(!dom) return donde.innerHTML;
+}
+
+// Manejo de Errores
+
+function rogError(msj,campo) {
+    return { fallo: true, msj, campo };
+}
+
+function campoError(campo) {
+    return typeof campo === "string" ? 
+        document.querySelector("[name=" +campo +"]") : 
+        campo;
+}
+
+function rogFallo(msj) {
+    let campo;
+    
+    function mstMsj(msj) {
+        if (typeof msj === "string") alert(msj || "¡No tengo conexión con la Base de Datos!");
+        else {
+            mstMsj(msj.msj);
+            if(msj.campo) campoError(msj.campo).setCustomValidity( msj.msj);
+        }
+    }
+    
+    if(msj.msjs) {
+        msj.msjs.forEach(mstMsj);
+        campo = campoError(msj.msjs[0].campo);
+    } else {
+        mstMsj(msj);
+        campo = campoError(msj.campo);
+    };
+
+    if(campo) rogFocaliza(campo);
+}
+
+function rogFocaliza(elemento) {
+    elemento.focus();
+    elemento.select();    
+}
+
+function limpiaTextAreas(frm) {
+    Array.from(frm.querySelectorAll("textarea")).forEach(x => x.value = x.value.trim());
 }

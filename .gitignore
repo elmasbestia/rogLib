@@ -1,0 +1,5 @@
+# No guardar los parámetros de la instalación
+.env
+
+# No llevar cuenta de las dependencias
+node_modules

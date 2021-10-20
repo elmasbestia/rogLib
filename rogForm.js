@@ -1,106 +1,129 @@
 // Crea un Formulario a partir de una estructura dada
 
-var _frm, _stru, _url, _metodo;
-
-var _cancela = () => _frm.reset();
-var _agrega  = () => _frm.reset();
 
 const moveCorr = moveCorresponding;
 
-var _fn = (datos) => console.log("Lectura perdida:", datos);
-
 class rogForm {
     constructor (dom, Stru, opcs) {
-        _stru = Stru instanceof Array ? Stru : desarma(Stru).map(x => new rogCampo(x,Stru[x]));
+        this.w = {};
+        this.dom = dom;
+      
+        this.w.stru = Stru instanceof Array ? 
+            Stru.map(x => new rogCampo(x.nb,x)) : 
+            desarma(Stru).map(x => new rogCampo(x,Stru[x]));
 
-        _frm = document.createElement("FORM");
-        _frm.className = "rogForm";
-        
-        objDom(dom).appendChild(_frm);
-  
-        _frm.addEventListener('submit', event => {
-            // submit event detected
+        this.frm = this.w.stru.reduce((form,x) => form += rogInput(x),"")           
+		
+		    this.lee     = (datos) => console.log("Lectura perdida:", datos);
+		    this.cancela = () => this.frm.reset();
+		    this.agrega  = this.frm.lee;
+        this.frm.appendChild(creaBtns(this.frm))
+
+        // Prepara el formulario
+        this.frm.addEventListener('submit', event => {
             event.preventDefault();
-            this.lee();
-        })
-    
-        _frm.innerHTML = _stru.reduce((form,x) => form += rogInput(x),"");
-            
-        _frm.appendChild(creaBtns(_frm))
+            limpiaTextAreas(this.frm);
+            if(this.frm.checkValidity()) this.lee(this.datos);
+			if(this.autoCierra) cierraModal(this)
+        });
+
+        this.frm.btn = this.frm.querySelector("[type=submit]")
+       
+        this.frm.addEventListener("change", (event) => {
+        this.frm.btn.disabled = !this.frm.checkValidity();
+      });
         
-        //btnDefault(_frm,"btnLee")
-	   _frm.onkeypress = (e) => { if(e.keyCode === 13) this.lee() }
-        
-        if(opcs) for(let opc in opcs) this[opc] = opcs[opc];
+      if(opcs) for(let opc in opcs) this[opc] = opcs[opc];
+      
+      this.dom.frm = this.frm;
     }
-    
+
+	set lee(fn) {
+		this.frm.lee = fn;
+	}
+
+	get lee() {
+		return this.frm.lee
+	}
+
+	set cancela(fn) {
+		this.frm.cancela = fn;	
+	}
+	
+	get cancela() {
+		return this.frm.cancela;	
+	}
+
+	set repite(fn) {
+		return this.frm.repite;
+	}
+	
+	get repite() {
+		return this.frm.repite;	
+	}
+
+    set dom(valor) {
+      this.w.dom = objDom(valor) || document.createElement("DIV")
+    }
+  
+    get dom() {
+      return this.w.dom
+    }
+  
+    set frm(contenido) {
+        this.w.frm = document.createElement("FORM");
+        this.w.frm.className = "rogForm";
+        
+        this.dom.appendChild(this.w.frm);
+      
+        this.w.frm.innerHTML = contenido;
+    }
+  
+    get frm() {
+      return this.w.frm;
+    }
+  
     set datos(buffer) {
-        moveCorresponding(buffer,_frm);
+        moveCorresponding(buffer,this.frm);
     }
     
     get datos() {
         let buffer = {};
-        let elementos = _frm.elements;
-        let leido =  _stru instanceof Array ?
+		
+		    moveCorr(this.frm,buffer)
+/*
+        let elementos = this.w.frm.elements;
+        let leido =  this.w.stru instanceof Array ?
             (x) => elementos[x._nb] :
             (x) => elementos[x];
-        desarma(_stru).forEach(x => {
+        desarma(this.w.stru).forEach(x => {
             let _campo = leido(x);
             if(_campo) buffer[_campo.name] = _campo.value;
         });
+*/
 
         return buffer;
     }
-    
+	
     get elements() {
-        return _frm.elements
-    }
-    
-    set validador({metodo, url}) {
-        _url = url;
-        _metodo = metodo;
-    }
-    
-    get validador() {
-        return { metodo: _metodo, url: _url }
-    }
-    
-    set alLeer(fn) {
-        _fn = fn;
-    }
-    
-    get alLeer() {
-        return _fn;
+        return this.frm.elements
     }
     
     set autoCierra (valor) {
-        this.cerrar = valor
+        this.w.cerrar = valor
     }
 
     get autoCierra () {
-        return this.cerrar;
+        return this.w.cerrar;
     }
 
     get cadena() {
       return cadenita(this.datos)
     }
     
-    lee () { 
-        procesaLoLeido(this.datos,this)
-        if(this.autoCierra) cierraModal(this)
-    }
-
-    get cancela () { return _cancela };
-    
-    set cancela(fn) { _cancela = fn };
-    
-    get agrega() { return _agrega }
-    
-    set agrega (fn) { _agrega = fn };
-    
     get errores () {
         let _e = {};
-        Array.from(_frm.elements).forEach(x => {
+        Array.from(this.frm.elements).forEach(x => {
             if(x.className === "error") _e[x.for] = x;
         });
         return _e;
@@ -112,55 +135,71 @@ function rogInput(Stru) {
     Retorna el innerHTML de un elemento de tipo rogCampo
     */
 
-    txt = `<label for='${Stru.nb}'>${Stru.titulo} :</label>`;
-    switch (Stru.tipo) {
-        case "radio":
-            txt += radioBtn(Stru.match,Stru.nb,Stru.valor);
-            break;
-        case "memo":
-            txt += `<textarea name='${Stru.titulo}' rows='5' cols='40'>${Stru.valor}</textarea>`;
-            break;
-        case "combo":
-            txt += Combo(Stru.nb,Stru.match);
-            break;
-        case "tabla":
-            txt += tabla(Stru.match);
-            break;
-        case "date":
-//            txt += `<input type='date' name='${Stru.nb}' value='${date("Y-m-d",Stru.valor)}'`  +(Stru.obligatorio ? " required" : "") +"/>";
-            txt += `<input type='date' name='${Stru.nb}' value='${Stru.valor}'`  +(Stru.obligatorio ? " required" : "") +"/>";
-            break;
-        case "checkbox":
-            txt += `<input type='checkbox' name='${Stru.nb}' value='${Stru.valor}'>`;
-            break;
-        case "genero":
-            txt += radioBtn({ 
-                Fem:  { valor: "Fem",  etiqueta: "♀" }, 
-                Masc: { valor: "Masc", etiqueta: "♂" }
-            },Stru.nb,Stru.valor);
-            break;
-        case "EdoCiv":
-            txt += radioBtn([
-                { etiqueta: "S", valor: "Soltero"}, 
-                { etiqueta: "C", valor: "Casado" },
-                { etiqueta: "U", valor: "Unido" }, 
-                { etiqueta: "D", valor: "Divorciado" },
-                { etiqueta: "V", valor: "Viudo" }
-            ],Stru.nb,Stru.valor);
-            break;
-        case "nacionalidad":
-            txt += radioBtn(["V","E"],Stru.nb,Stru.valor);
-            break;
-        case "tlf":
-            txt += `<input type='number' name='${Stru.nb}' value='${Stru.valor}'` +(Stru.obligatorio ? " required" : "") +"/>";            
-            break;
-        default:
-            txt += `<input type='${Stru.tipo || "text"}' name='${Stru.nb}' value='${Stru.valor}'` +(Stru.obligatorio ? " required" : "") +"/>";
+    function tmpInput(Stru) {
+      return `<label for='${Stru.nb}'>${Stru.titulo} :</label>
+        ${txtInput(Stru)}
+        <span for='${Stru.nb}' class='error'>
+          ${Stru.obligatorio ? "*" : ""} 
+          ${Stru.Err || ""}
+        </span>;
+        <br><br>`;      
     }
-
-    txt += `<span for='${Stru.nb}' class='error'>` +(Stru.obligatorio ? "*" : "") +` ${Stru.Err || ""}</span>`;
-    txt += "<br><br>";
-    return txt;
+  
+    function lista(Stru) {
+        return Stru.tipo === "list" ? `list='lst${Stru.nb}'` : "";    
+    }
+    
+    function txtInput(Stru) {
+      let txt = "";
+      switch (Stru.tipo) {
+          case "radio":
+              txt += radioBtn(Stru.match,Stru.nb,Stru.valor);
+              break;
+          case "memo":
+              txt += `<textarea name='${Stru.titulo}' rows='5' cols='40'>${Stru.valor}</textarea>`;
+              break;
+          case "combo":
+              txt += Combo(Stru.nb,Stru.match);
+              break;
+          case "tabla":
+              txt += tabla(Stru.match);
+              break;
+          case "date":
+              txt += `<input type='date' name='${Stru.nb}' value='${Stru.valor}'`  +(Stru.obligatorio ? " required" : "") +"/>";
+              break;
+          case "checkbox":
+              txt += `<input type='checkbox' name='${Stru.nb}' value='${Stru.valor}'>`;
+              break;
+          case "genero":
+              txt += radioBtn({ 
+                  Fem:  { valor: "Fem",  etiqueta: "♀" }, 
+                  Masc: { valor: "Masc", etiqueta: "♂" }
+              },Stru.nb,Stru.valor);
+              break;
+          case "EdoCiv":
+              txt += radioBtn([
+                  { etiqueta: "S", valor: "Soltero"}, 
+                  { etiqueta: "C", valor: "Casado" },
+                  { etiqueta: "U", valor: "Unido" }, 
+                  { etiqueta: "D", valor: "Divorciado" },
+                  { etiqueta: "V", valor: "Viudo" }
+              ],Stru.nb,Stru.valor);
+              break;
+          case "nacionalidad":
+              txt += radioBtn(["V","E"],Stru.nb,Stru.valor);
+              break;
+          case "tlf":
+              txt += `<input type='number' name='${Stru.nb}' value='${Stru.valor}'` +(Stru.obligatorio ? " required" : "") +"/>";            
+              break;
+          case "list":
+              txt += `<datalist id="lst${Stru.nb}"></datalist>`
+          default:
+              txt += `<input type='${Stru.tipo || "text"}' name='${Stru.nb}' value='${Stru.valor}' ${lista(Stru)} ${(Stru.obligatorio ? " required" : "")} />`;
+      }
+      return txt;
+    }
+  
+    return tmpInput(Stru);
 }
     
 function Combo (nb,match) {
@@ -200,8 +239,8 @@ function radioBtn (match,nb,valor) {
 
 function moveCorresponding(de,a) {
     /*
-    Mueve elementos de un FORM a un obbjeto o viceversa
-    @param de y @param a son el objeto y el formulario o su id
+        Mueve elementos de un FORM a un objeto o viceversa
+        @param de y @param a son el objeto y el formulario o su id
     */
     let _formaA = objDom(a);
     let elementos = _formaA && _formaA.elements;
@@ -212,28 +251,17 @@ function moveCorresponding(de,a) {
         
         let n = elementos.length;
         for (let i = 0; i < n ;i++) {
-            let campo = elementos[i];
-            let nbCampo = campo.name;
-            if (nbCampo && valores[nbCampo]) {
-                if(campo.type === "radio") campo.checked = (campo.value === valores[nbCampo]);
-                else if(campo.type === "checkbox") {
-                    campo.checked = valores[nbCampo];
-                } else if (campo.type === "date") campo.value = rogFmt.Fecha(valores[nbCampo]).amd();
-                  else campo.value = valores[nbCampo];
-            }
+            asignaValor(elementos[i],valores[elementos[i].name])
         }
     } else {                // FORM A DATOS
         elementos = objDom(de).elements;
         
 		if(objVacio(a)) {
 			let n = elementos.length;
-			for (let i = 0; i < n ;i++) {
-				let nbCampo = elementos[i].name;
-				if (nbCampo) asignaElemento(a,nbCampo,elementos[i])
-			};
+			for (let i = 0; i < n ;i++) asignaElemento(a,elementos[i].name,elementos[i]);
 		} else {
             elementos = Array.from(elementos).filter(x => x.name);
-			for(nbCampo in a) {
+			for(let nbCampo in a) {
                 let e = elementos.find(x => x.name === nbCampo);
                 if (e) asignaElemento(a,nbCampo,e)
             }
@@ -242,18 +270,49 @@ function moveCorresponding(de,a) {
 }
 
 function asignaElemento(a,nbCampo,elemento) {
-    switch (elemento.type) {
-        case "radio":
-            if(elemento.checked ) a[nbCampo] = elementos.value;
-            break;
-        case "checkbox":
-            a[nbCampo] = elemento.checked;
-            break;
-        case "date":
-            a[nbCampo] = rogFmt.Fecha(elemento.value).amd();
-            break;
-        default:
-            a[nbCampo] = elemento.value;
+    if(nbCampo && elemento.value) {
+        switch (elemento.type) {
+            case "radio":
+                if(elemento.checked ) a[nbCampo] = elemento.value;
+                break;
+            case "checkbox":
+                a[nbCampo] = elemento.checked;
+                break;
+            case "date":
+                a[nbCampo] = elemento.valueAsDate;
+                break;
+            default:
+                a[nbCampo] = elemento.value;
+        }
+    } else {
+        /* 
+            CASO ESPECIAL:
+            Un campo "file" que se llenó en otra ocasión no muestra el valor correspondiente (Nombre del archivo a cargar)
+            así que hay que mantenerlo con valor artificialmente para saber que en algún momento se cargó.
+            Esto se complementa en la función "asignaValor" y en el objeto rogCargArch
+        */
+        if((elemento.type === "file") && elemento.classList.contains("listo")) a[nbCampo] = "listo";
+    }
+}
+
+function asignaValor(campo,valor) {
+    if(campo && valor) {
+        switch (campo.type) {
+            case "radio":
+                campo.checked = (campo.value === valor);
+                break;
+            case "checkbox":
+                campo.checked = valor;
+                break;
+            case "date":
+                campo.value = rogFmt.Fecha(valor).amd();
+                break;
+            case "file":
+                campo.classList.add("listo")
+                break;
+            default:
+                campo.value = valor;
+        }
     }
 }
 
@@ -265,8 +324,8 @@ function creaBtns(frm) {
     let _botones  = document.createElement("NAV");
   
     _botones.appendChild(creaSubmit("✔"))
-    _botones.appendChild(creaBtn("✘","", cierraModal));
-    _botones.appendChild(creaBtn("&#x2795","",_agrega));
+    _botones.appendChild(creaBtn("✘",null,frm.cancela));
+    _botones.appendChild(creaBtn("&#x2795",null,frm.repite));
     
     return _botones;
 }
@@ -284,7 +343,7 @@ function creaBtn(etq,clase = "",atribs,txt) {
     
     let _btn = document.createElement("SPAN");
     _btn.innerHTML = etq;
-    _btn.className= "rogBtn " +clase;
+    _btn.className= ("rogBtn " +clase).trim();
 
     if(atribs instanceof Function) _btn.onclick = atribs;
     else for(let atrib in atribs) _btn[atrib] = atribs[atrib];
@@ -292,36 +351,17 @@ function creaBtn(etq,clase = "",atribs,txt) {
     return txt ? _btn.outerHTML : _btn;
 }
 
-function creaSubmit(txt = "Dale!", url) {
+function creaSubmit(txt = "Dale!") {
     _btn = document.createElement("INPUT");
     _btn.type = "SUBMIT";
     _btn.value = txt;
-    _btn.formAction = url;
     _btn.className = "rogBtn"
     return _btn;
 }
 
 // Procesos
-
-function creaFormulario(dom, Stru, opcs) {
-    let _frm = new rogForm(dom,Stru);
-    
-    for(opc in opcs) _frm[opc] = opcs[opc];
-    
-    return _frm;
-}
-
 function validaFormulario(formulario) {
     return Object.array(objDom(formulario).elements).reduce((fino,x) => fino && Stru[x.name].valida(), true)
-}
-        
-function procesaLoLeido(datos,frm) {
-    if(frm.validador.url) accede(
-        frm.validador.metodo,frm.validador.url,
-        datos => respuestaValidacion(datos,frm),
-        datos
-    );
-    else frm.alLeer(frm.datos)
 }
         
 function respuestaValidacion(datos,frm) {
@@ -352,28 +392,6 @@ function evalRadio(nb) {
 function evalOpcRadio(opcion,valor) {
     if(opcion.checked) return opcion.value;
 }
-
-function creaModal(stru, cb, opcs) {
-    let vnt = document.querySelector(".rogModalTmp")
-    if(vnt) vnt.innerHTML = ""
-    else vnt = document.createElement("DIV")
-    vnt.className = "rogModal rogModalTmp"
-    let cnt = document.createElement("DIV")
-    cnt.className = "cntModal"
-    let btn = document.createElement("SPAN")
-    btn.className="rogCierraModal"
-    btn.textContent = "X"
-    
-    cnt.appendChild(btn)
-    vnt.appendChild(cnt)
-    
-    let forma = new rogForm(cnt,stru,opcs)
-    forma.alLeer = cb
-    
-    document.getElementsByTagName("BODY")[0].appendChild(vnt)
-  
-    mstModal(vnt)
-}      
       
 function cadenita(datos) {
     return "?"+desarma(datos).map(x => x +"="+ datos[x]).join("&")

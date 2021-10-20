@@ -3,79 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <title>Lista de Fonts</title>
+<style>
+	:root {
+		--clrFnd: #f7d794;
+		--clrTxt: #5a311d;
+	}
+
+	.font {
+		border-bottom: 1px solid black;
+	}
+
+	.font div:hover {
+		color: var(--clrTxt);
+		background-color: var(--clrFnd);
+	}
+</style>
 </head>
 <body>
-
-<div style="font-family: Arial, Helvetica, sans-serif;
-">
-font-family: Arial, Helvetica, sans-serif;   
-</div>
-font-family: ‘Arial Black’, Gadget, sans-serif;
-<div styile="">
-font-family: ‘Arial Black’, Gadget, sans-serif;    
-</div>
-<div style="font-family: ‘Bookman Old Style’, serif;">
-font-family: ‘Bookman Old Style’, serif;    
-</div>
-<div style="font-family: ‘Comic Sans MS’, cursive;">
-font-family: ‘Comic Sans MS’, cursive;    
-</div>
-<div style="font-family: Courier, monospace;">
-font-family: Courier, monospace;    
-</div>
-<div style="font-family: ‘Courier New’, Courier, monospace;">
-font-family: ‘Courier New’, Courier, monospace;    
-</div>
-<div style="font-family: Garamond, serif;">
-font-family: Garamond, serif;    
-</div>
-<div style="font-family: Georgia, serif;">
-font-family: Georgia, serif;    
-</div>
-<div style="font-family: Impact, Charcoal, sans-serif;">
-font-family: Impact, Charcoal, sans-serif;    
-</div>
-<div style="font-family: ‘Lucida Console’, Monaco, monospace;">
-font-family: ‘Lucida Console’, Monaco, monospace;    
-</div>
-<div style="font-family: ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif;">
-font-family: ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif;
-</div>
-<div style="font-family: ‘MS Sans Serif’, Geneva, sans-serif;">
-font-family: ‘MS Sans Serif’, Geneva, sans-serif;    
-</div>
-<div style="font-family: ‘MS Serif’, ‘New York’, sans-serif;">
-font-family: ‘MS Serif’, ‘New York’, sans-serif;    
-</div>
-<div style="font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif;">
-font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif;
-</div>
-<div style="font-family: Symbol, sans-serif;">
-font-family: Symbol, sans-serif;    
-</div>
-<div style="font-family: Tahoma, Geneva, sans-serif;">
-font-family: Tahoma, Geneva, sans-serif;    
-</div>
-<div style="font-family: ‘Times New Roman’, Times, serif;">
-font-family: ‘Times New Roman’, Times, serif;    
-</div>
-<div style="font-family: ‘Trebuchet MS’, Helvetica, sans-serif;">
-font-family: ‘Trebuchet MS’, Helvetica, sans-serif;    
-</div>
-<div style="font-family: Verdana, Geneva, sans-serif;">
-font-family: Verdana, Geneva, sans-serif;    
-</div>
-<div style="font-family: Webdings, sans-serif;">
-font-family: Webdings, sans-serif;    
-</div>
-<div style="font-family: Wingdings, ‘Zapf Dingbats’, sans-serif;">
-font-family: Wingdings, ‘Zapf Dingbats’, sans-serif;   
-</div>
-<div style="font-family: 'Open 24 Display st'">
-font-family: "Open 24 Display St";
-</div>
-<div style="font-family: Calculator">
-font-family: Calculator;
-</div>
+	<main></main>
 </body>
+<script>
+	const familia = [
+
+		'Arial Black',
+		'Book Antiqua',
+		'Bookman Old Style',
+		'Comic Sans MS',
+		'Courier New',
+		'Lucida Console',
+		'Lucida Grande',
+		'Lucida Sans Unicode',
+		'MS Sans Serif',
+		'MS Serif',
+		'New York',
+		'Palatino Linotype',
+		'Times New Roman',
+		'Trebuchet MS',
+		'Zapf Dingbats',
+		'cursive',
+		'Open 24 Display St',
+		'Arial',
+		'Calculator',
+		'Charcoal',
+		'Courier',
+		'Cuchu',
+		'Gadget',
+		'Garamond',
+		'Geneva',
+		'Georgia',
+		'hellogiraffe',
+		'Helvetica',
+		'Impact',
+		'Monaco',
+		'monospace',
+		'Palatino',
+		'Sans-serif',
+		'serif',
+		'Symbol',
+		'Tahoma',
+		'Times',
+		'Verdana',
+		'Webdings',
+		'Wingdings'
+	];
+
+	document.querySelector("MAIN").innerHTML = familia.map(tmpFont).join("");
+
+	function tmpFont(nbFont) {
+	return `<div class="font">
+		<h3>${nbFont}</h3>
+		<div style="font-family: '${nbFont}'">
+			font-family: '${nbFont}';<br>
+			0 1 2 3 4 5 6 7 8 9
+		</div></div>`
+	}
+</script>
 </html>

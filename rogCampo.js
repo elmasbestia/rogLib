@@ -11,44 +11,39 @@
 	Err		Mensaje de Error al validar el Valor del Campo
 */
 class rogCampo {
-//    private contenido;
-//    private padre = null;
-  
     constructor (nb,campo) {
         this._nb = nb;
         this._titulo = campo.titulo || nb;
-        this._tipo = typeof campo === "string" ? campo : campo instanceof Array ? "combo" : campo.tipo || campo.type || "text";
+        this.tipo = campo;
         this._original  = campo.original;
         this._contenido = "";
         this._obligatorio = campo.obligatorio || campo.required;
         this._match = campo instanceof Array ? campo : campo.match;
         this._validador = campo.validador;
+        this.valor = campo.valor;
         this._Err = "";
     }
 
+    set tipo(campo) {
+        this._tipo = typeof campo === "string" ? 
+            campo : campo instanceof Array ? 
+                "combo" : 
+                campo.tipo || campo.type || "text";
+    }
+    
+    get tipo() {
+        return this._tipo;
+    }
+    
     valida(valor) {
         let _err = "";
-        if (empty(valor)) {
+        if (valor == undefined) {
             if (this.obligatorio) {
                 _err = (this.tipo === "combo" ? "Escoja un valor de la lista" : "Este campo es requerido");
             }
         } else {
             // Chequea el formato de los datos
-            if (this.match) {
-                if (gettype(this.match) != "array") {
-                    // Filtros posibles de implementar: http://php.net/manual/es/filter.filters.validate.php
-                    switch (this.match) {
-                        case "correo":
-                            if (!filter_var(valor, FILTER_VALIDATE_EMAIL)) { _err = "Formato de correo inválido"; }
-                            break;
-                        case "url":
-                            if (!filter_var(valor, FILTER_VALIDATE_URL)) { _err = "Dirección inválida"; }
-                            break;
-                        default:
-                            if (!preg_match(this.match,valor)) { _err = "VALOR INVÁLIDO";}
-                    }
-                }
-            }
+            if (this.match) _err = evaluaMatch(this.match,valor)
         }
         if (!_err) { // Fechas (CASO ESPECIAL ya que HTML las trata como texto)
             if (this.tipo === "date") {
@@ -72,15 +67,13 @@ class rogCampo {
     }
   
     set valor(valor = null) {
-        original = this.contenido;
-        if (valor !== null) {
-            if (!this.valida(valor)) {
-                this.contenido = original;
+        if (valor != null) {
+          if (this.valida(valor)) this._contenido = valor;
+          else {
                 msj = `No es posible asignar el valor valor a ${this.titulo} <br/>(${this._Err})`;
                 alert(msj);
             }
         }
-        return this.contenido;
     }
     
     get valor () { return this._contenido; }
@@ -131,6 +124,21 @@ function rogValores(val) {
     return retorno;
 }
 
-function rogReValidador(campos) {
-    
+function evaluaMatch(match,valor) {
+    if(this.match instanceof Function) if(!this.match(valor)) _err = "Valor inválido";
+    else if ((this.match instanceof Array)) {
+        if (!this.match.includes(valor)) _err = "Valor no contemplado"
+    } else {
+        // Filtros posibles de implementar: http://php.net/manual/es/filter.filters.validate.php
+        switch (this.match) {
+            case "correo":
+                if (!filter_var(valor, FILTER_VALIDATE_EMAIL)) _err = "Formato de correo inválido";
+                break;
+            case "url":
+                if (!filter_var(valor, FILTER_VALIDATE_URL)) _err = "Dirección inválida";
+                break;
+            default:
+                if(!(new RegExp('\\w+')).test(valor)) _err = "Formato inválido"; 
+        }
+    }
 }

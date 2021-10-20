@@ -1,6 +1,10 @@
 // Rafa Gómez
 // Librería para manipular Bases de Datos
 
+const MUESTRA = true;
+const DEEPER  = true;
+console.assert(MUESTRA,"rogBD:", "Se muestran mensajes")
+
 const rogFiltra = require("./rogNodeLib").rogFiltra;
 const path      = require("path");
 
@@ -14,6 +18,7 @@ function nbSql(txt) {
 
 class pgBD {
     constructor(bd) {
+        console.assert(DEEPER,"BD:",bd)
         this.bd = bd;    
     }
     
@@ -21,23 +26,62 @@ class pgBD {
         if(txtSql.split(" ").length === 1) {
             txtSql = "SELECT * FROM " +txtSql;
         }
-        return await pgSql(this.bd,txtSql)
+        return pgSql(this.bd,txtSql)
     }
     
     async agrega(txtSql) {
-        return await pgSql(this.bd,txtSql)
+        return pgSql(this.bd,txtSql)
     }
-    
+
+    async carga(tabla,datos) {
+        let resultados = [];
+        let cant = 0;
+
+        async function cuentaRegs(bd,tabla) {
+            let retorno = -1;
+            const resultado = await pgSql(bd,`Select count(*) as cant from ${tabla}`);
+
+            if(resultado.fallo) console.error(resultado.msj);
+            else retorno = resultado[0].cant;
+
+            return retorno;
+        }
+
+        console.log(`Comenzamos con ${await cuentaRegs(this.bd,tabla)}`);
+
+        const campos = lstCampos(datos[0]);
+        try {
+            const n = datos.length;
+            let x = 0;
+            for(; x < n; x++) {
+                let resultado = await pgSql(this.bd,sqlInsert(tabla,datos[x],campos));
+                if (!resultado.fallo) cant++
+                resultados.push(resultado);
+            };
+        } catch (e) {
+            console.log(e);
+        } finally {
+            console.log(`Terminamos con ${await cuentaRegs(this.bd,tabla)}`);
+
+            return { fallo: ((cant != resultados.length) || resultados.some(x => x.fallo)), 
+                msj: cant ? `grabó ${cant}` : "No grabó ningún registro",
+                cant, 
+                total: datos.length, 
+                resultados 
+            };
+        }
+    }
+
     async modifica(txtSql) {
-        return await pgSql(this.bd,txtSql)
+        return pgSql(this.bd,txtSql)
     }
     
     async elimina(txtSql) {
-        return await pgSql(this.bd,txtSql)
+        return pgSql(this.bd,txtSql)
     }
     
     async ejecuta(txtSql) {
-        return await pgSql(this.bd,txtSql)
+        return pgSql(this.bd,txtSql)
     }
     
     async cierra() {
@@ -51,7 +95,8 @@ class pgBD {
             modifica: this.modifica,
             elimina: this.elimina,
             cierra: this.cierra,
-            ejecuta: this.ejecuta
+            ejecuta: this.ejecuta,
+            carga: this.carga
         }
     }
 }
@@ -61,14 +106,22 @@ function abrePg (prms) {
 		return `postgressql://${prms.user}:${prms.password}@${prms.host}:${prms.port}/${prms.database}`;
 	} 	
 
-    const Cliente = require('pg').Client;
-    const cliente = new Cliente({connectionString: txtConexion(prms)});
+//    const cliente = new Cliente({connectionString: txtConexion(prms)});
+/*
+{
+	  user:     prms.user,
+	  host:     prms.host, 
+	  database: prms.database,
+	  password: prms.password,
+	  port:     prms.port,
+	}
+*/
 
-    return new Promise((resolve,reject) =>
-        cliente.connect()
-            .then(() => resolve(cliente))
-            .catch(err => reject(err))
-)}
+	const { Pool: Cliente } = require('pg')
+	const cliente = new Cliente (prms)
+
+    return new Promise((si, no) => si(cliente))
+}
 
 function abreJson(prms) {
     let _datos = {};
@@ -116,8 +169,8 @@ function abreMongo(prms) {
                 useNewUrlParser: true, useUnifiedTopology: true
             }
         ).then(cliente => resolve(cliente.db(prms.nb))
-        ).catch(err => reject(err)
-    ))
+        ).catch(reject)
+    )
 }
 
 function abreMySql(prms) {
@@ -150,28 +203,43 @@ class mongoBD {
     }
     
     async agr(tabla,condiciones,fn) {
-        return await this.acomoda(this.tab(tabla).aggregate(opcAgg(opciones)),fn);
+        return await this.acomoda(this.tab(tabla).aggregate(this.opcAgg(condiciones)),fn);
     }
     
     async agrega(tabla,buffer,fn) {
+        console.log("Buffer:")
+        console.log(buffer)
+        
         let retorno = await this.tab(tabla).insertOne(buffer);
         console.log("Volvió de mongo agregar")
-        console.log()
         retorno = retorno.insertedCount === 1 ? buffer : { fallo: true, registrado: insertedCount}
         console.log(retorno)
         return retorno;
     }
     
     async modifica(tabla,buffer) {
+        let bofe = Object.assign(buffer)
+        let id = bofe._id
+        delete bofe._id
+        
         return await this.tab(tabla).findOneAndReplace(
-            {id: buffer.id},
-            buffer
+            {id: id},
+            bofe
         );
     }
     
     async elimina(tabla,id) {
         if(this.eliminar[tabla]) this.eliminar[tabla](query);
         else this(tabla).deleteMany(query);
+    }
+    
+    async carga(tabla,datos,fn) {
+        console.log(datos.length,"registros");
+        
+        let retorno = await this.tab(tabla).insertMany(datos);
+        console.log("Volvió de mongo cargar")
+        retorno = retorno.result.n === datos.length ? retorno.result : { fallo: true, cant: datos.length, registrado: retorno.result.n}
+        return retorno;
     }
         
     async cierra() {
@@ -205,6 +273,7 @@ class mongoBD {
             cierra: this.cierra,
             tab: this.tab,
             agr: this.agr,
+            carga: this.carga,
             getClave: this.getClave
         }
     }
@@ -226,7 +295,8 @@ class jsonBD {
 	agrega(tabla,registro) {
 		this.inicio();
 		this.bd.Datos[tabla].regs.push(registro);
-        verifica(tabla);
+        this.verifica(tabla);
+        return registro;
 	}
 
 	modifica(tabla,query,reg) {
@@ -234,12 +304,14 @@ class jsonBD {
 		let _reg = rogFiltra(this.bd.Datos
 		[tabla].regs,query);
 		_reg[0] = Object.assign(_reg[0],reg);
-        verifica(tabla);        
+        this.verifica(tabla);
+        return reg;
 	}
 
 	elimina(tabla,query) {
 		let _reg = rogFiltra(tabla,query);
-        verifica(tabla);
+        this.verifica(tabla);
+        return {}
 	}
 
     cierra() {}
@@ -265,7 +337,9 @@ class jsonBD {
             modifica: this.modifica,
             elimina: this.elimina,
             cierra: this.cierra,
-            guarda: this.guarda
+            guarda: this.guarda,
+            verifica: this.verifica,
+            guardaSiempre: this.guardaSiempre
         }
     }
 }
@@ -301,8 +375,26 @@ async function mySql(bd,txtSql) {
 }
 
 async function pgSql(bd,txtSql) {
-    let datos = await bd.query(txtSql);
-    return datos.rows;
+	let retorno = {};
+
+    console.assert(MUESTRA,"sql:",txtSql);
+	
+	try {
+        const cnx = await bd.connect();
+
+        console.assert(DEEPER,"conexión:",cnx);
+
+		let datos = await cnx.query(txtSql);
+        console.assert(DEEPER,"Devuelve:",datos);
+		retorno = datos.rows;
+
+        cnx.release();
+	} catch (e) {
+		retorno = { fallo: true, msj: e.message };
+	} finally {
+        console.assert(MUESTRA,"Resultado:",retorno);
+        return retorno;
+    }
 }
 
 const dbms = {
@@ -360,18 +452,21 @@ class rogBD {
 	}	
 }
 
+function getBDDat(x) {
+    let bdDat = x
+    if(typeof x === "string") {
+        bdDat = JSON.parse(process.env["bd"+x]);
+
+        if(!bdDat.nb) bdDat.nb = x;
+    }
+    return bdDat
+}
+
 function abreBDs() {
     return new Promise((resolve,reject) => {
-        Promise.all(
-            Array.from(arguments).map(x => {
-            let bdDat = JSON.parse(process.env["bd"+x]);
-
-            if(!bdDat.nb) bdDat.nb = x;
-
-            return abreBD(bdDat);
-        })).then(bds => {
+        Promise.all(Array.from(arguments).map(abreBD)
+        ).then(bds => {
             console.log("BDs abiertas")
-            
 
             let bd = {};
 
@@ -382,17 +477,18 @@ function abreBDs() {
 
             resolve (bd);    
         }).catch(err => {
-            console.log("Error al conectar con las BDs");
+            console.error("Error al conectar con las BDs");
             reject(err);
         });
     })
 }
 
-function abreBD (bdDat) {
+function abreBD (x) {
+    let bdDat = getBDDat(x)
     return new Promise((resolve,reject) => {
         dbms[bdDat.dbms].abre((bdDat.prms))
             .then(bd => resolve(new rogBD(bd,bdDat)))
-            .catch(err => reject(err))
+            .catch(reject)
     });
 }
 
@@ -410,6 +506,30 @@ function guarda(datos,nb) {
 */
     fs = require('fs');
     fs.writeFileSync(nb, JSON.stringify(datos));
+}
+
+function lstCampos(bofe) {
+    return Object.keys(bofe).join();
+}
+
+function lstValores(datos) {
+    return Object.keys(datos).map(x => entreComillas(datos[x])).join();
+}
+
+function lstMod(datos) {
+    return Object.keys(datos).map(nbCampo => entreComillas(nbCampo) +" = " + entreComillas(datos[nbCampo]))
+}
+
+function sqlInsert(tabla,datos,campos = lstCampos(datos)) {
+    return `INSERT INTO "${tabla}" (${campos}) VALUES(${lstValores(datos)})`
+}
+
+function sqlMod(tabla,datos) {
+    return `UPDATE "${tabla}" SET ${lstMod(datos)} WHERE id = ${datos.id}` 
+}
+
+function entreComillas(texto) {
+    return '"' +texto +'"';
 }
 
 exports.abreBD   = abreBD;

@@ -113,21 +113,19 @@ function creaReco(dom,a,fn,aBsq,titulo) {
 }
 
 function tmpReco() {
-return `		
-	
+return `	
 		<nav class="rogReco">
 			<h3 class="titReco"></h3>
-			<span class="btnReco antReco"></span>
+			<span class="btnReco antReco svgClaro"><span>
 			<span class="spnReco">nro.</span>
 			<input type="text" name="actReco" class="numReco">
 			<span class="spnReco">de</span>
 			<input type="text" name="numReco" class="numReco" readonly>
-			<span class="btnReco sigReco"></span>
-			<span class="btnReco bsqReco" title="Buscar un texto"></span>
+			<span class="btnReco sigReco svgClaro"></span>
+			<span class="btnReco bsqReco svgClaro" title="Buscar un texto"></span>
 			<input type="text" name="txtReco">
 		</nav>
 		<div class="vntReco"></div>
-	
 `
 }
 

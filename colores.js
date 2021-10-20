@@ -1,6 +1,7 @@
 'use strict'
 
-module.exports = (nbColor) => new colorcito(nbColor);
+module.exports.colorcito = (nbColor) => new colorcito(nbColor);
+module.exports.colores   = lstColores;
 
 const colores = {
         alicia:  {  colour: "aliceblue", rgb: [240, 248, 255]},
@@ -158,13 +159,15 @@ function separa(etiqueta) {
     let separadores = ["/",","]
 
     separadores.forEach(separador => {
-        if(etiqueta.indexOf(separador) > 0) _etiquetas = _etiquetas[0].split(separador);
+        if(etiqueta.includes(separador)) _etiquetas = _etiquetas[0].split(separador);
     })
     
     return _etiquetas;
 }
 
 const dd = (num) => (num > 15 ? "" : "0") +num.toString(16);
+    
+const hexa = (rgb) => "#" +rgb.map(dd).join("")
 
 class colorcito {
     constructor(etiqueta) {
@@ -173,7 +176,7 @@ class colorcito {
             return {
                 nombre: x,
                 colour: _trad.colour,
-                hexa:   _trad.colour ? this.hexa(_trad.rgb) : null,
+                hexa:   _trad.colour ? hexa(_trad.rgb) : null,
                 dom:    this.domColor(_trad)
             }
         })
@@ -187,14 +190,18 @@ class colorcito {
         return { nombre: valor, ...(colores[valor.replace(/\s+/g, '').toLowerCase()] || { colour: null })}
     }
     
-    hexa(rgb) {
-        return "#" +rgb.map(dd).join("")
-    }
-    
     domColor(valor) {
         let _color = typeof valor === "string" ? this.tradColor(valor) : valor;
         return  _color.colour ?
-            `<input type='color' value= ${this.hexa(_color.rgb)}>` :
+            `<input type='color' value= ${hexa(_color.rgb)}>` :
             `<span>Error (${_color.nombre})</span>`
     }
+}
+
+function lstColores() {
+	let retorno = {};
+	
+	for (let color in colores) retorno[color] = hexa(colores[color].rgb);
+	
+	return retorno;
 }

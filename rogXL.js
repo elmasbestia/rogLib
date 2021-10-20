@@ -355,7 +355,7 @@ function recorreLibro(libro,fn) {
     libro.wb.SheetNames.forEach((nbHoja,xHoja) => fn(new Hoja(libro,xHoja)))
 }
 
-function recorreHoja(hoja,fn) {
+function recorreHoja(hoja,fn = x => x) {
     let _filas = lib.sheet_to_row_object_array(hoja.celdas)
     return _filas.map(fn);
 }

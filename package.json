@@ -15,8 +15,10 @@
   "dependencies": {
     "ejs": "^3.1.6",
     "js-xlsx": "^0.8.22",
-    "mongodb": "^3.6.4",
-    "pg": "^8.5.1",
+    "mongodb": "^3.6.9",
+    "ora": "^5.4.1",
+    "pg": "^8.6.0",
+    "systeminformation": "^5.7.8",
     "xmlhttprequest": "^1.8.0"
   }
 }

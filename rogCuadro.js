@@ -178,10 +178,6 @@ function mstCuenta(matriz,dom,titDatos,titGrupos) {
 
   return _grid;
 }
-
-function def(valor) {
-  return valor ? valor : "";
-}
       
 // Manejo de Grupos
 function armaBtnGrupo(indice, texto) {
@@ -207,5 +203,3 @@ function mstGrupos(grupos) {
     vntGrupos.appendChild(armaBtnGrupo(i,x))
   });
 }
-
-//grupos[grupos.length -1].detalle = true;
