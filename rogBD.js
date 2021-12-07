@@ -1,8 +1,8 @@
 // Rafa Gómez
 // Librería para manipular Bases de Datos
 
-const MUESTRA = true;
-const DEEPER  = true;
+const MUESTRA = false;  // Si "false" muestra mensajes de nivel "normal"
+const DEEPER  = true;   // Si "false" muestra mensajes más detallados
 console.assert(MUESTRA,"rogBD:", "Se muestran mensajes")
 
 const rogFiltra = require("./rogNodeLib").rogFiltra;
@@ -21,12 +21,25 @@ class pgBD {
         console.assert(DEEPER,"BD:",bd)
         this.bd = bd;    
     }
-    
+
+    async cuentaRegs(tabla) {
+        let retorno = -1;
+        const resultado = await pgSql(this.bd,`Select count(*) as cant from ${tabla}`);
+
+        console.assert(DEEPER,resultado)
+
+        if(resultado.fallo) console.error(resultado.msj);
+        else retorno = resultado[0].cant;
+
+        return retorno;
+    }
+
     async lee(txtSql) {
         if(txtSql.split(" ").length === 1) {
             txtSql = "SELECT * FROM " +txtSql;
         }
-        return pgSql(this.bd,txtSql)
+        let retorno = await pgSql(this.bd,txtSql);
+        return retorno.fallo ? retorno : retorno.rows;
     }
     
     async agrega(txtSql) {
@@ -37,31 +50,26 @@ class pgBD {
         let resultados = [];
         let cant = 0;
 
-        async function cuentaRegs(bd,tabla) {
-            let retorno = -1;
-            const resultado = await pgSql(bd,`Select count(*) as cant from ${tabla}`);
+        const n = datos.length;
+        console.group(`Vamos a Grabar ${n} registros en ${tabla}`)
 
-            if(resultado.fallo) console.error(resultado.msj);
-            else retorno = resultado[0].cant;
+        console.log(`Comenzamos con ${await this.cuentaRegs(tabla)}`);
 
-            return retorno;
-        }
-
-        console.log(`Comenzamos con ${await cuentaRegs(this.bd,tabla)}`);
-
-        const campos = lstCampos(datos[0]);
+        // const campos = lstCampos(datos[0]); Cada reg. puede ser distinto
         try {
-            const n = datos.length;
             let x = 0;
             for(; x < n; x++) {
-                let resultado = await pgSql(this.bd,sqlInsert(tabla,datos[x],campos));
-                if (!resultado.fallo) cant++
-                resultados.push(resultado);
+                let resultado = await pgSql(this.bd,sqlInsert(tabla,datos[x],lstCampos(datos[x])));
+                if (resultado.fallo) {
+                    resultados.push(resultado);
+                    console.dir(resultado)
+                } else cant++;
+                console.assert(MUESTRA,x, cant)
             };
         } catch (e) {
             console.log(e);
         } finally {
-            console.log(`Terminamos con ${await cuentaRegs(this.bd,tabla)}`);
+            console.groupEnd(`Terminamos con ${await this.cuentaRegs(this.bd,tabla)}`);
 
             return { fallo: ((cant != resultados.length) || resultados.some(x => x.fallo)), 
                 msj: cant ? `grabó ${cant}` : "No grabó ningún registro",
@@ -124,33 +132,27 @@ function abrePg (prms) {
 }
 
 function abreJson(prms) {
-    let _datos = {};
+    let _datos = [];
     let _dir = prms.dir ? 
         (prms.dir +(prms.dir.endsWith('/') ? "" : "/")) : 
         "./";
-	
-	function cargaTabla(nb) {
-		let _alias = nb;
-		let _nb    = nb;
-		if (typeof nb !== "string") {
-			_alias = Object.keys(nb)[0];
-			_nb    = Object.values(nb)[0];
-		}
-        
-        _datos[_alias] = {};
 
-		_datos[_alias].alias = _alias;
-		_datos[_alias].nb    = _nb;
-		_datos[_alias].regs = require(path.join(__dirname,_dir,_nb+".json"));
-	}
-    
+    function objeta(arr) {
+        return arr.reduce((obj,x) => {
+            obj[x.alias] = x;
+            return obj;
+        }, {});
+    }
+
     return new Promise((resolve,reject) => {
         try {
-            if(prms.nb instanceof Array) prms.nb.forEach(x => cargaTabla(x));
-            else if (typeof prms.nb === "string") cargaTabla(prms.nb);
-            else for(x in prms.nb) cargaTabla({[x]: prms.nb[x]})
-
-            resolve({Datos: _datos});
+            if(prms.nb) {
+                if(prms.nb instanceof Array) _datos = prms.nb.map(x => cargaTabla(x,_dir));
+                else if (typeof prms.nb === "string") _datos = [cargaTabla(prms.nb,_dir)];
+                else _datos = Object.keys(prms.nb).map (x => cargaTabla(x,_dir))
+            }
+                
+            resolve({dir: _dir, Datos: objeta(_datos)});
         } catch (e) {
             reject(e);
         }
@@ -281,34 +283,38 @@ class mongoBD {
 
 class jsonBD {
     constructor(bd) {
-        this.bd = bd;    
+        this.bd = bd;
+        this.dir = bd.dir;
         this.guardar = {};
+    }
+
+    Tabla(nbTabla) {
+        if(this.bd.Datos[nbTabla]) return this.bd.Datos[nbTabla]; 
+        return this.bd.Datos[nbTabla] = cargaTabla(nbTabla,this.dir);
     }
 
 	lee(tabla,query) {
 		this.inicio();
-		return query ? 
-			rogFiltra(this.bd.Datos[tabla].regs, query) : 
-			this.bd.Datos[tabla].regs;
+		return this.Tabla(tabla).regs instanceof Array ? rogFiltra(this.Tabla(tabla).regs, query) : this.Tabla(tabla).regs;
 	}
 	
 	agrega(tabla,registro) {
 		this.inicio();
-		this.bd.Datos[tabla].regs.push(registro);
+		this.Tabla(tabla).regs.push(registro);
         this.verifica(tabla);
         return registro;
 	}
 
 	modifica(tabla,query,reg) {
 		this.inicio();
-		let _reg = rogFiltra(this.bd.Datos
-		[tabla].regs,query);
+		let _reg = rogFiltra(this.Tabla(tabla).regs,query);
 		_reg[0] = Object.assign(_reg[0],reg);
         this.verifica(tabla);
         return reg;
 	}
 
 	elimina(tabla,query) {
+        // Meterle mano
 		let _reg = rogFiltra(tabla,query);
         this.verifica(tabla);
         return {}
@@ -385,14 +391,15 @@ async function pgSql(bd,txtSql) {
         console.assert(DEEPER,"conexión:",cnx);
 
 		let datos = await cnx.query(txtSql);
+        console.assert(MUESTRA,"Devuelve:",datos.lenght,"regs.");
         console.assert(DEEPER,"Devuelve:",datos);
-		retorno = datos.rows;
+		retorno = datos;
 
         cnx.release();
 	} catch (e) {
-		retorno = { fallo: true, msj: e.message };
+		retorno = { fallo: true, msj: e.message, sql: txtSql };
 	} finally {
-        console.assert(MUESTRA,"Resultado:",retorno);
+        console.assert(DEEPER,"Resultado:",retorno);
         return retorno;
     }
 }
@@ -470,9 +477,9 @@ function abreBDs() {
 
             let bd = {};
 
-            bds.forEach(x => {
+            bds.forEach((x,i) => {
                 console.log(x.datos.txt)
-                bd[x.nb] = x
+                bd[x.nb || "bd" +i] = x
             });
 
             resolve (bd);    
@@ -499,6 +506,42 @@ function cierraBD(bds) {
     }
 }
 
+function cargaTabla(nb,dir) {
+    let _alias = nb;
+    let _nb    = nb;
+
+    if (typeof nb !== "string") {
+        _alias = Object.keys(nb)[0];
+        _nb    = Object.values(nb)[0];
+    }
+    
+    return leeTabla(_alias,_nb,dir);
+}
+
+function leeTabla(alias,nb,dir) {
+    return {
+        alias,
+        nb,
+        regs: require(path.join(__dirname,dir,nb+".json"))
+    }
+}
+
+function leeXl(nbLibro,nbHoja) {
+    const xl  = require(dirLib+"rogXL");
+
+    const libro = new xl.Libro(nbLibro);
+
+    function hoja(nbHoja) {
+        return xl.lib.sheet_to_json(libro.wb.Sheets[nbHoja]);
+    }
+
+    if(nbHoja) {
+        return hoja(isNaN(nbHoja) ? nbHoja : libro.ws.SheetNames[hoja]);
+    } else {
+        return libro.ws.SheetNames.map(hoja);
+    }
+}
+
 function guarda(datos,nb) {
 /*
     Guarda los datos (@param datos) 
@@ -521,17 +564,19 @@ function lstMod(datos) {
 }
 
 function sqlInsert(tabla,datos,campos = lstCampos(datos)) {
-    return `INSERT INTO "${tabla}" (${campos}) VALUES(${lstValores(datos)})`
+    return `INSERT INTO ${tabla} (${campos}) VALUES(${lstValores(datos)})`
 }
 
 function sqlMod(tabla,datos) {
-    return `UPDATE "${tabla}" SET ${lstMod(datos)} WHERE id = ${datos.id}` 
+    return `UPDATE ${tabla} SET ${lstMod(datos)} WHERE id = ${datos.id}` 
 }
 
-function entreComillas(texto) {
-    return '"' +texto +'"';
+function entreComillas(texto,dobles) {
+    const comillas = dobles ? '"' : "'"
+    return comillas +texto +comillas;
 }
 
 exports.abreBD   = abreBD;
 exports.abreBDs  = abreBDs;
 exports.cierraBD = cierraBD;
+exports.guarda   = guarda;

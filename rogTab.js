@@ -39,36 +39,18 @@
 
 */
 
-// import rogCSS  from "./rogCSS";
-
 class rogTab {
   constructor(datos, dom, titulo = "", campos = null, Fn = {}) {
-    this.w = {};
     this.dom = dom;
-    this.titulo = titulo;
+    this.titulo = titulo || "registros";
     this.css = new rogCSS();
     this.Fn = Fn;
-    this.datos = datos;
+    this.datos = datos || [];
     this.campos = campos;
 
     if (dom) this.mst();
   }
 
-    set datos(valores) {
-        this.w.datos =  valores || []
-    }
-    
-    get datos() {
-        return this.w.datos;
-    }
-    
-    fila(x) {
-        const xFila = isNaN(x) ?
-            e.currentTarget.parentNode.dataset.fila :
-            x;
-        return this.datos[xFila];
-    }
-    
   set dom(dom) {
     this.donde = dom ? objDom(dom) : document.createElement("DIV");
   }
@@ -105,7 +87,6 @@ class rogTab {
     if (typeof campo === "string") {
       propiedades = Object.assign(propiedades, fnFmt(campo));
       propiedades.fn = this.Fn && this.Fn[campo];
-      propiedades.atributos = {};
     } else {
       propiedades.tipo = campo.tipo;
       propiedades.titulo = campo.titulo;
@@ -114,8 +95,7 @@ class rogTab {
         fnFmt(campo.nb, campo.tipo, campo.fmt)
       );
       propiedades.clase = campo.clase;
-      propiedades.fn = campo.fn || fnFn(this.Fn,campo.nb);
-      propiedades.atributos = campo.atributos || {};
+      propiedades.fn = (this.Fn && this.Fn[campo.nb]) || campo.fn;
     }
     this.setCampo(campo.nb || campo, propiedades);
   }
@@ -136,38 +116,45 @@ class rogTab {
     return retorno;
   }
 
-  agrega(linea, clsLinea = "") {
-    const { _clase, _atributo } = isNaN(clsLinea)
-      ? { _clase: clsLinea }
-      : { _atributo: { "data-fila": clsLinea } };
-
-    this.tabla.querySelector("tbody").innerHTML += domTxt(
-      this.nbCampos.reduce((txt, nbCampo, i) => {
-        let col = this.campos[nbCampo];
-        if (col) {
-          txt += this.creaCelda(
-            linea[nbCampo],
-            nbCol(nbCampo) + " " + def(col.clase),
-            col.atributos,
-            col.fmt,
-            col.fn
-          );
-        }
-        return txt;
-      }, ""),
-      "tr",
-      _clase,
-      _atributo
-    );
+  agrega(datos) {
+    if (datos instanceof Array) datos.forEach(agrega);
+    else {
+      this.datos.push(datos);
+      this.mst();
+    }
   }
 
-  creaCelda(valor, clase, atributos, fmt, fn) {
+  mstLinea(linea, clsLinea = "") {
+    if (linea instanceof Array) linea.forEach((x) => mstLinea(x, clsLinea));
+    else {
+      const { _clase, _atributo } = isNaN(clsLinea)
+        ? { _clase: clsLinea }
+        : { _atributo: { "data-fila": clsLinea } };
+
+      this.tabla.querySelector("tbody").innerHTML += domTxt(
+        this.nbCampos.reduce((txt, nbCampo, i) => {
+          let col = this.campos[nbCampo];
+          if (col) {
+            txt += this.creaCelda(
+              linea[nbCampo],
+              nbCol(nbCampo) + " " + def(col.clase),
+              col.fmt,
+              col.fn
+            );
+          }
+          return txt;
+        }, ""),
+        "tr",
+        _clase,
+        _atributo
+      );
+    }
+  }
+
+  creaCelda(valor, clase, fmt, fn) {
     let _valor = def(valor);
     let _txt = _valor ? fmt(_valor) : _valor;
-    let limpia = (valor) => typeof valor === "string" ?
-        valor.replace(/"/g,'\\"').replace(/'/g,"\\'") :
-        valor; 
-    //let atributos = {} // "data-valor": limpia(_valor) };
+    let atributos = { "data-valor": _valor };
 
     if (fn) {
       atributos.onclick = fn + "(event)";
@@ -177,20 +164,23 @@ class rogTab {
   }
 
   creaTitulos(tabla) {
-      if(this.titulo) tabla.querySelector("#titTab").innerHTML = this.datos.length ?
-        this.titulo + spanCant(this.datos.length) + tmpTabBtns() :
-        "No hay " + this.titulo;
+    tabla.querySelector("#titTab").innerHTML = this.datos.length
+      ? this.titulo + spanCant(this.datos.length) + tmpTabBtns()
+      : "No hay " + this.titulo;
+
+    this.programaMnu({
+      btnXl: this.xl.bind(this),
+      btnImp: this.imp.bind(this)
+    });
 
     if (this.hayCampos)
       tabla.querySelector("thead").outerHTML = tabTitulos(this.titCampos);
   }
 
   programaMnu(opciones) {
-      for (let opcion in opciones) {
-        let btn = this.tabla.querySelector("." + opcion)
-        if(btn) btn.onclick = opciones[opcion];
-    }
-}
+    for (let opcion in opciones)
+      this.tabla.querySelector("." + opcion).onclick = opciones[opcion];
+  }
 
   mst() {
     this.tabla = document.createElement("TABLE");
@@ -202,33 +192,66 @@ class rogTab {
 
     this.creaTitulos(this.tabla);
 
-    this.datos.forEach(this.agrega.bind(this));
-
-    this.programaMnu({
-      btnXl: this.xl.bind(this),
-      btnImp: this.imp.bind(this),
-    });
+    this.datos.forEach(this.mstLinea.bind(this));
   }
 
   imp() {
-      let btns = this.dom.querySelector(".rogTabBtns")
-      if(btns) btns.style.display = "none";
-      debugger
-      Imprime(this);
-      if(btns) btns.style.display = "";
+    var vnt = window.open("", "PRINT", "height=400,width=600");
+
+    // Esconde los botones
+    const btns = document.querySelector(".rogTabBtns");
+    btns.style.display="none";
+
+    // C A B E C E R A
+    vnt.document.write(`<html><head>
+      <title>${this.titulo}</title>
+      <style src='/lib/css/rog.css'></style>
+      </head><body>`
+    );
+
+    // E S T I L O S
+    //vnt.document.append(this.css);
+
+    vnt.document.write(`<h1>${this.titulo}</h1>`);
+
+    // C O N T E N I D O
+    vnt.document.write(this.tabla.outerHTML);
+
+    // P I E   D E   P Á G I N A
+
+    vnt.document.write("</body></html>");
+
+    vnt.document.close(); // necessary for IE >= 10
+    vnt.focus(); // necessary for IE >= 10*/
+
+    vnt.print();
+    vnt.close();
+
+    btns.style.display="unset";
   }
 
   xl() {
-    grabaXL(this.tabla,this.titulo);
+    //<script src="/Lib/xlsx.full.min.js"></script>
+    function s2ab(s) { 
+      var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
+      var view = new Uint8Array(buf);  //create uint8array as viewer
+      for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
+      return buf;    
+    }
+    
+    const espera = new rogVntEspera("Guardando en XL");
+    
+    let wb = XLSX.utils.table_to_book(this.tabla);
+    let wbOut = XLSX.write(wb, { 
+        bookType: 'xlsx',
+        bookSST:    true,
+        type:     'binary'
+    })
+
+    saveAs(new Blob([s2ab(wbOut)],{type:"application/octet-stream"}), nbSerial(this.nb) +'.xlsx');
+    
+    espera.cierra();
   }
-}
-
-function fnFn(fn,nb) {
-    let retorno = fn;
-
-    if (fn && fn[nb]) retorno = fn[nb];
-
-    return retorno;
 }
 
 function fnFmt(nb, tipo = "", fmt) {
@@ -263,7 +286,7 @@ function fnFmt(nb, tipo = "", fmt) {
       case "cant":
       case "cantidad":
         alinea = "right";
-        _fmt = rogFmt.Ent;
+        _fmt = rogFmt.Moneda;
         break;
       default:
         switch (tipo) {
@@ -294,74 +317,7 @@ function nbCol(nb) {
 
 function tmpTabBtns() {
   return `<span class='rogTabBtns'>
-    <span class='btnXl'  title="Pasar a MS Excel"><i class='far fa-file-excel'></i></span>
-    <span class='btnImp' title="Imprimir"><i class='fas fa-print'></i></span>
+    <span class='btnXl'  title="pasar a MS Excel"><i class='far fa-file-excel'></i></span>
+    <span class='btnImp' title="imprimir"><i class='fas fa-print'></i></span>
     </span>`;
-}
-
-/*
-var link = document.createElement('link');
-link.setAttribute('rel', 'stylesheet');
-link.setAttribute('href', 'css/my.css');
-document.head.appendChild(link);
-*/
-        
-function grabaXL(tabla,nbArch) {
-    function s2ab(s) { 
-        var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
-        var view = new Uint8Array(buf);  //create uint8array as viewer
-        for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
-        return buf;    
-    }
-
-    try {
-        bsq.Espera ("Guardando en XL");
-    } catch(e) {
-        console.log(e)
-    }
-    
-    let wb = XLSX.utils.table_to_book(tabla);
-    let wbOut = XLSX.write(wb, { 
-        bookType: 'xlsx',
-        bookSST:    true,
-        type:     'binary'
-    })
-
-    saveAs(new Blob([s2ab(wbOut)],{type:"application/octet-stream"}), nbSerial(nbArch) +'.xlsx');
-
-    try {
-        bsq.Espera();
-    } catch(e) {
-        console.log(e)
-    }
-}
-
-function Imprime(tabla) {
-    var vnt = window.open("", "PRINT", "height=400,width=600");
-
-    // C A B E C E R A
-    vnt.document.write("<html><head><title>" + tabla.titulo + "</title>");
-    vnt.document.write("<meta charset='utf-8'>");
-    //vnt.document.styleSheets = window.document.styleSheets
-
-    vnt.document.write("</head><body >");
-
-    vnt.document.write("<h1>" + tabla.titulo + "</h1>");
-
-    // C O N T E N I D O
-    vnt.document.write(tabla.tabla.outerHTML);
-
-    // P I E   D E   P Á G I N A
-
-    // E S T I L O S
-    vnt.document.write("<style src='./css/paleta.css'></style>");
-    vnt.document.write("<style src='./css/rog.css'></style>");
-    vnt.document.body.appendChild(tabla.css.css);
-
-    // F I N A L E
-    vnt.document.close(); // mrqr de IE >= 10
-    vnt.focus(); // mrqr de IE >= 10*/
-
-    vnt.print();
-    vnt.close();
 }

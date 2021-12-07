@@ -1,51 +1,41 @@
-
 class rogBlq {
     constructor(opciones) {
         this.w      = {}
 
         this.nb     = opciones.nb;
-        this.titulo = opciones.titulo;
         this.dom    = opciones.dom;
-        this.que    = opciones.tabla ? "tabla" : "lista";
-
-        this.xLi = -1;
-       
-        this.campos = opciones.stru;
-
-        this.vnt = new rogVnt({modal: true, tipo: "objeto"});
-        this.frm = new rogForm(this.vnt.vnt,this.campos)
-        this.frm.frm.lee = this.lee.bind(this);
-
+        this.h      = document.createElement("SUMMARY");
+        this.dom.appendChild(this.h);
         this.datos  = opciones.datos;
+        this.detalle = creaDetalle(this,opciones);
+
+        this.dom.appendChild(this.detalle.dom);
+		
+		this.lee = opciones.lee;
+        
+        this.mst = this.detalle.mst;
     }
 
     set dom(pDom) {
-        this.w.dom = objDom(pDom) || document.querySelector(".rogBlq");
-        this.w.dom.classList.add("rogBlq");
-        this.w.dom.innerHTML = tmpDomDetalle();
-        this.w.dom.querySelector("SUMMARY").innerHTML = this.titulo 
-            +spanCant(0)
-            +creaBtn("&#x2795","spanBtn",{ title: "Agregar "+this.titulo },true)
-        this.w.dom.querySelector(".spanBtn").onclick = this.agrega.bind(this);
+        this.w.dom = objDom(pDom) || document.querySelector("rogBloque") 
+        if(!((this.w.dom) && (this.w.dom.tagName === "DETAILS"))) {
+            let _dom = document.createElement("DETAILS");
+            this.w.dom.appendChild(_dom);
+            this.w.dom = _dom;
+        }
+        this.w.dom.classList.add("rogBloque");
     }
 
     get dom () {
       return this.w.dom
     }
-
+    
     get datos () {
         return this.w.datos;
     }
-
-    set datos (valores = []) {
-        // Se mantiene la identidad del arreglo usado para crear el bloque
-        if(this.w.datos) this.w.datos.splice(0,this.w.datos.length, ...valores); 
-        else this.w.datos = valores;
-        this.mst();
-    }
-
-    get cambio () {
-        return this.w.cambio;
+  
+    set datos (valores) {
+        this.w.datos = valores || [];
     }
     
     get value() {
@@ -56,80 +46,91 @@ class rogBlq {
         this.datos = datos;
     }
 
-    set xLi(valor) {
-        this.w.xLi = isNaN(valor) ? -1 : valor;
-    }
+	set lee(lee) {
+    	this.w.lee = {};
+        if(lee !== undefined) {
+            if(lee instanceof Function) this.w.lee.post = lee;
+            else {
+                this.w.lee = Object.assign(lee);
+            }
+		}
+	}
 
-    get xLi() {
-        return this.w.xLi;
-    }
-  
-    set cant(n) {
-        this.dom.querySelector(".badge").innerHTML = n;
-    }
-
-    get regActual() {
-        return this.datos[this.xLi] || regVacio(this.campos)
-    }
-
-    set regActual(datos) {
-        this.datos[this.xLi] = Object.assign(this.datos[this.xLi], datos)
-    }
-
-    set campos(stru) {
-        this.w.campos = desarma(stru).map(x => new rogCampo(x,stru[x]));
-    }
-
-    get campos() {
-        return this.w.campos;
-    }
-
-    get domQue() {
-        return this.dom.querySelector(".rogDetBlq");
-    }
-    
-    mst() {
-        if(this.que === "tabla") {
-            this.tabla ? this.tabla.mst() : this.tabla = new rogTab(this.datos,this.domQue,null,this.campos);
-            Array.from(this.tabla.tabla.querySelectorAll("tr")).forEach(x => x.onclick= this.chxLi.bind(this))
-        } else mstLista(this.datos,this.domQue,null, {texto: this.texto}, this.chxLi.bind(this));
-        this.cant = this.datos.length;
-    }
-
-    mstFrm(i) {
-        this.xLi = i;
-
-        moveCorresponding(this.regActual,this.vnt.vnt.frm);
-        this.vnt.mst();
-    }
-
-    agrega() {
-        this.vnt.titulo = "Agrega";
-        this.mstFrm(-1);
-    }
-    
-    chxLi(e) {
-        this.vnt.titulo = "Modifica";
-        this.mstFrm(e.currentTarget.dataset.fila);
-    }
-
-    lee(datos) {
-        if(this.xLi === -1) {
-            this.datos.push(datos);
-            this.xLi += this.datos.length;
-        } else this.regActual = datos;
+    agrega(datos) {
+        this.datos.push(datos);
         this.mst();
-        this.vnt.mst()
     }
 }
 
-function tmpDomDetalle() {
-    return `<summary>
-    </summary>
-    <div class="rogDetBlq">
-    </div>`
-}
+function creaDetalle(obj,opcs) {
+    let xLi = -1;
+    let tabla
+    let _campos = desarma(opcs.stru).map(x => new rogCampo(x,opcs.stru[x]));
+
+    function hBlq() {
+        return obj.nb
+            +spanCant(obj.datos.length)
+            +creaBtn("&#x2795","spanBtn btnAgrega",{ onclick: agrega, title: "Agregar "+obj.nb},true)
+    }
+
+    function agrega() {
+        xLi = -1;
+        nea = regVacio(_campos);
+        _vnt.titulo = "Agrega";
+        mstForm(nea);
+    }
+
+    function mst() { 
+        tabla ? tabla.mst() : tabla = new rogTab(obj.datos,_lista,opcs.nb,_campos);
+        mstH();
+    }
     
-function mstLista() {
-    alert("Sumatra!")
+    function chxLi(e) {
+        xLi = rogPrm(e);
+        _vnt.titulo = "Modifica";
+        mstForm(opcs.datos[xLi])
+    }
+
+    function mstH() {
+        obj.h.innerHTML = hBlq(obj);
+        obj.h.querySelector(".btnAgrega").onclick = agrega;
+    }
+    
+    function mstForm(datos) {
+        moveCorresponding(datos,_vnt.vnt.frm);
+        _vnt.mst();
+    }
+    
+    function lee(datos) {
+		let retorno = true;
+        debugger
+		if (obj.w.lee.pre) retorno = obj.w.lee.pre(datos);
+		if(retorno) {
+			if(xLi === -1) {
+                tabla.agrega(datos); //	obj.datos.push(datos);
+				xLi += obj.datos.length;
+			} else obj.datos[xLi] = Object.assign(obj.datos[xLi], datos);
+			if (obj.w.lee.post) retorno = obj.w.lee.post(datos);
+		}
+        mst();
+        _vnt.mst()
+    }
+    
+    function cancela() {
+        alert("Cancela")
+    }
+    
+    let _dom   = document.createElement("DIV");
+    let _lista    = document.createElement("DIV");
+    let _vnt      = new rogVnt({modal: true, tipo: "objeto"});
+    
+    const forma = new rogForm(_vnt.vnt,_campos)
+    forma.frm.lee = lee;
+  
+    _dom.className = "rogDetBloque";
+    _dom.appendChild(_lista);
+
+    mst();
+  
+    return {dom: _dom, frm: forma.frm, mst, vnt: _vnt};
 }

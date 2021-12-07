@@ -126,10 +126,12 @@ function rogFiltra(a, query, aCamposIn) {
     let retorno = a instanceof Array ? a : desarmaObj(a);
     let aIn = desarma(aCamposIn);
 
-    for(let [que,valor] of Object.entries(query)) {
-        retorno = aIn.includes(que) ?
-            rogBsqIn(retorno,que, valor) : 
-            retorno.filter(x => x[que] == valor);
+    if(query) {
+        for(let [que,valor] of Object.entries(query)) {
+            retorno = aIn.includes(que) ?
+                rogBsqIn(retorno,que, valor) : 
+                retorno.filter(x => x[que] == valor);
+        }
     }
 
     return retorno;

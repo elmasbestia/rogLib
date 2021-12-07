@@ -1,5 +1,8 @@
     
-export default function accede(accion,url,fn,datos) {
+//export default 
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
+exports.accede = function (accion,url,fn,datos) {
     let xobj = new XMLHttpRequest();
     let xmlEstado = ["No inicializado", "Conectado", "Recibido", "Procesando", "Listo"];
 	let retorno = {};
@@ -9,14 +12,14 @@ export default function accede(accion,url,fn,datos) {
     }
     
 	function msjErrorXML(e) {
-		alert(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
+		console.log(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
         retorno = (xobj.responseText.fallo ? JSON.parse(xobj.responseText)  : respuestaError(xobj));
 	}
      
     xobj.accion = accion;
     xobj.url    = url;
      
-    xobj.overrideMimeType("application/json");
+    //xobj.overrideMimeType("application/json");
     xobj.withCredentials = true;
     xobj.open(accion, url, false);
     xobj.setRequestHeader('Content-type','application/json; charset=utf-8');

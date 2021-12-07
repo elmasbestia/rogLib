@@ -4,13 +4,12 @@
 const moveCorr = moveCorresponding;
 
 class rogForm {
-    constructor (dom, Stru, opcs) {
+  constructor (dom, Stru, opcs) {
         this.w = {};
         this.dom = dom;
       
-        this.w.stru = Stru instanceof Array ? 
-            Stru.map(x => new rogCampo(x.nb,x)) : 
-            desarma(Stru).map(x => new rogCampo(x,Stru[x]));
+        this.w.stru = (Stru instanceof Array ? Stru : desarma(Stru))
+            .map(x => new rogCampo(x,Stru[x]));
 
         this.frm = this.w.stru.reduce((form,x) => form += rogInput(x),"")           
 		
@@ -18,20 +17,21 @@ class rogForm {
 		    this.cancela = () => this.frm.reset();
 		    this.agrega  = this.frm.lee;
         this.frm.appendChild(creaBtns(this.frm))
-
+      
         // Prepara el formulario
         this.frm.addEventListener('submit', event => {
             event.preventDefault();
             limpiaTextAreas(this.frm);
             if(this.frm.checkValidity()) this.lee(this.datos);
-			if(this.autoCierra) cierraModal(this)
+			      if(this.autoCierra) cierraModal(this)
         });
 
         this.frm.btn = this.frm.querySelector("[type=submit]")
        
         this.frm.addEventListener("change", (event) => {
-        this.frm.btn.disabled = !this.frm.checkValidity();
-      });
+          this.evaluaFs()
+          this.frm.btn.disabled = !this.frm.checkValidity();
+        });
         
       if(opcs) for(let opc in opcs) this[opc] = opcs[opc];
       
@@ -62,48 +62,36 @@ class rogForm {
 		return this.frm.repite;	
 	}
 
-    set dom(valor) {
-      this.w.dom = objDom(valor) || document.createElement("DIV")
-    }
-  
-    get dom() {
-      return this.w.dom
-    }
-  
-    set frm(contenido) {
-        this.w.frm = document.createElement("FORM");
-        this.w.frm.className = "rogForm";
-        
-        this.dom.appendChild(this.w.frm);
-      
-        this.w.frm.innerHTML = contenido;
-    }
-  
-    get frm() {
-      return this.w.frm;
-    }
-  
-    set datos(buffer) {
-        moveCorresponding(buffer,this.frm);
-    }
-    
-    get datos() {
-        let buffer = {};
-		
-		    moveCorr(this.frm,buffer)
-/*
-        let elementos = this.w.frm.elements;
-        let leido =  this.w.stru instanceof Array ?
-            (x) => elementos[x._nb] :
-            (x) => elementos[x];
-        desarma(this.w.stru).forEach(x => {
-            let _campo = leido(x);
-            if(_campo) buffer[_campo.name] = _campo.value;
-        });
-*/
+  set dom(valor) {
+    this.w.dom = objDom(valor) || document.createElement("DIV")
+  }
 
-        return buffer;
-    }
+  get dom() {
+    return this.w.dom
+  }
+
+  set frm(contenido) {
+    this.w.frm = document.createElement("FORM");
+    this.w.frm.className = "rogForm";
+
+    this.dom.appendChild(this.w.frm);
+
+    this.w.frm.innerHTML = contenido;
+  }
+
+  get frm() {
+    return this.w.frm;
+  }
+
+  set datos(buffer) {
+    moveCorresponding(buffer,this.frm);
+  }
+
+  get datos() {
+    let buffer = {};
+    moveCorr(this.frm,buffer)
+    return buffer;
+  }
 	
     get elements() {
         return this.frm.elements
@@ -128,6 +116,20 @@ class rogForm {
         });
         return _e;
     }
+
+    get formulas () {
+      return this.w.stru.filter(x => x.f);
+    }
+  
+    campo(nb) {
+      return this.frm[nb];
+    }
+  
+    evaluaFs() {
+      let datos = this.datos;
+      this.formulas.forEach(x => this.campo(x._nb).value = x.f(datos));
+      // asignaValor(this.campo[x._nb],x.f(datos))
+    }
 }
 
 function rogInput(Stru) {
@@ -141,7 +143,7 @@ function rogInput(Stru) {
         <span for='${Stru.nb}' class='error'>
           ${Stru.obligatorio ? "*" : ""} 
           ${Stru.Err || ""}
-        </span>;
+        </span>
         <br><br>`;      
     }
   
@@ -156,7 +158,7 @@ function rogInput(Stru) {
               txt += radioBtn(Stru.match,Stru.nb,Stru.valor);
               break;
           case "memo":
-              txt += `<textarea name='${Stru.titulo}' rows='5' cols='40'>${Stru.valor}</textarea>`;
+              txt += `<textarea name='${Stru.titulo}' rows='5' cols='40'></textarea> ${opciones(Stru)}`;
               break;
           case "combo":
               txt += Combo(Stru.nb,Stru.match);
@@ -165,7 +167,7 @@ function rogInput(Stru) {
               txt += tabla(Stru.match);
               break;
           case "date":
-              txt += `<input type='date' name='${Stru.nb}' value='${Stru.valor}'`  +(Stru.obligatorio ? " required" : "") +"/>";
+              txt += `<input type='date' name='${Stru.nb}' ${opciones(Stru)}/>`;
               break;
           case "checkbox":
               txt += `<input type='checkbox' name='${Stru.nb}' value='${Stru.valor}'>`;
@@ -189,12 +191,12 @@ function rogInput(Stru) {
               txt += radioBtn(["V","E"],Stru.nb,Stru.valor);
               break;
           case "tlf":
-              txt += `<input type='number' name='${Stru.nb}' value='${Stru.valor}'` +(Stru.obligatorio ? " required" : "") +"/>";            
+              txt += `<input type='number' name='${Stru.nb}' ${opciones(Stru)} />`;
               break;
           case "list":
-              txt += `<datalist id="lst${Stru.nb}"></datalist>`
+              txt += `<datalist id="lst${Stru.nb}">${Stru.match()}</datalist>`
           default:
-              txt += `<input type='${Stru.tipo || "text"}' name='${Stru.nb}' value='${Stru.valor}' ${lista(Stru)} ${(Stru.obligatorio ? " required" : "")} />`;
+              txt += `<input type='${Stru.tipo || "text"}' name='${Stru.nb}' ${lista(Stru)} ${opciones(Stru)} />`;
       }
       return txt;
     }
@@ -237,6 +239,13 @@ function radioBtn (match,nb,valor) {
 	},"");
 }
 
+function opciones(Stru) {
+  return (Stru.obligatorio ? " required" : "") + 
+    (Stru.f ? " readonly" : "") +
+    (Stru.tipo === "number" ? " style= 'textAlign: right'" : "") +
+    (Stru.valor ? ` value = '${Stru.valor}'` : "");
+}
+
 function moveCorresponding(de,a) {
     /*
         Mueve elementos de un FORM a un objeto o viceversa
@@ -256,12 +265,12 @@ function moveCorresponding(de,a) {
     } else {                // FORM A DATOS
         elementos = objDom(de).elements;
         
-		if(objVacio(a)) {
-			let n = elementos.length;
-			for (let i = 0; i < n ;i++) asignaElemento(a,elementos[i].name,elementos[i]);
-		} else {
-            elementos = Array.from(elementos).filter(x => x.name);
-			for(let nbCampo in a) {
+      if(objVacio(a)) {
+        let n = elementos.length;
+        for (let i = 0; i < n ;i++) asignaElemento(a,elementos[i].name,elementos[i]);
+      } else {
+              elementos = Array.from(elementos).filter(x => x.name);
+        for(let nbCampo in a) {
                 let e = elementos.find(x => x.name === nbCampo);
                 if (e) asignaElemento(a,nbCampo,e)
             }
@@ -272,7 +281,7 @@ function moveCorresponding(de,a) {
 function asignaElemento(a,nbCampo,elemento) {
     if(nbCampo && elemento.value) {
         switch (elemento.type) {
-            case "radio":
+          case "radio":
                 if(elemento.checked ) a[nbCampo] = elemento.value;
                 break;
             case "checkbox":
@@ -281,6 +290,9 @@ function asignaElemento(a,nbCampo,elemento) {
             case "date":
                 a[nbCampo] = elemento.valueAsDate;
                 break;
+          case "number":
+                a[nbCampo] = elemento.valueAsNumber;
+              break;
             default:
                 a[nbCampo] = elemento.value;
         }
@@ -396,3 +408,4 @@ function evalOpcRadio(opcion,valor) {
 function cadenita(datos) {
     return "?"+desarma(datos).map(x => x +"="+ datos[x]).join("&")
 }
+

@@ -241,7 +241,7 @@ function dirCelda(col,fila) {
 }
 
 function _nbHoja(libro,nbHoja) {
-    return isNaN(nbHoja) ? nbHoja : (libro.wb.SheetNames[nbHoja] || "Hoja"+(parseInt(nbHoja)+1))
+    return isNaN(nbHoja) ? nbHoja : (libro.wb.SheetNames[nbHoja] || "Hoja"+(parseInt(nbHoja)+1));
 }
 
 function creaHoja(libro,nb) {
@@ -360,6 +360,29 @@ function recorreHoja(hoja,fn = x => x) {
     return _filas.map(fn);
 }
 
+function ciclo(dir,fn) {
+    const fs = require("fs");
+    const path = require("path");
+
+    fs.readdir(dir, (err, archs) => {
+	  if(err) {
+          console.error(err);
+      } else {
+        archs.forEach(arch => {
+	       console.log(arch);
+            let wb = abreXL(arch,dir);
+            wb.SheetNames.forEach((nbHoja,xHoja) => {
+                console.log("** : ", nbHoja);
+                if(nbHoja === "INSTRUCTIVO") console.log("==> nvpb!")
+                else {
+                    fn(lib.sheet_to_row_object_array(wb.Sheets[nbHoja]));
+                }
+            });
+        });
+      }
+    });
+}
+
 // .utils.encode_cell, etc.
 //  sheet_to_row_object_array
 
@@ -449,9 +472,10 @@ exports.Libro = Libro;
 exports.Hoja = Hoja;
 exports.guarda = guarda;
 exports.lib = lib;
+exports.ciclo = ciclo;
 
 function guarda(htmlTabla,tit,type = 'xlsx') {
-	   XL.writeFile(this.wb,this.wb.FILENAME);
+	XL.writeFile(this.wb,this.wb.FILENAME);
 
     var wb = XLSX.utils.table_to_book(htmlTabla, {sheet:tit});
 	return XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'});

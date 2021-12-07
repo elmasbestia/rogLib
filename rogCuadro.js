@@ -2,56 +2,60 @@
 
 class rogCuadro {
   constructor (grupos,datos,dom) {
-      this.h = {};  // Hasta que FF quiera
-    this.h.dom    = dom;
-    this.h.grupos = grupos;
-    this.h.datos  = datos;
-    
+    this.w = {};  // Hasta que FF quiera
+    this.dom    = dom;
+    this.grupos = grupos;
+    this.datos  = datos;
+
     this.mst();
   }  
   
   set dom(objeto) {
-    this.h.dom = objDom(objeto);
+    this.w.dom = objDom(objeto);
     this.mst();
   }
   
+    get dom() {
+        return this.w.dom;
+    }
+
   get grupos() {
-    return this.h.grupos;
+    return this.w.grupos;
   }
   
   set grupos(grupos) {
-    this.h.grupos = desarma(grupos);
+    this.w.grupos = desarma(grupos);
     this.mst();
   }
   
   set datos(datos) {
-    this.h.datos = datos;
+    this.w.datos = datos;
     this.mst();
   }
 
+  get datos() {
+    return this.w.datos;
+  }
+
+  set titulo(valor) {
+    this.w.titulo = valor;
+  }
+
   get titGrupos() {
-      return this.h.grupos.join(" / ");
+      return this.w.grupos.join(" / ");
   }
   
   get titulo() {
-      return this.h.titDatos || this.titGrupos;
-  }
-
-  set titDatos(valor) {
-      this.h.titDatos = valor;
-  }
-
-  agregaGrupo(grupo) {
-    this.h.grupos.push(grupo)
+      return this.w.titulo || this.titGrupos;
   }
 
   mst () {
-    if(this.h.grupos && this.h.datos) {
-        mstCuenta(
-            creaMatriz(
-                cuentaGrupo(this.h.grupos,this.h.datos))
-                ,this.h.dom,this.titDatos,this.titGrupos)
-  }
+    if(this.w.grupos && this.w.datos) {
+      mstCuenta(
+        creaMatriz(
+          cuentaGrupo(this.w.grupos,this.w.datos))
+            ,this.w.dom,this.titDatos,this.titGrupos)
+    }
   }
 }
 
@@ -203,3 +207,23 @@ function mstGrupos(grupos) {
     vntGrupos.appendChild(armaBtnGrupo(i,x))
   });
 }
+
+  // D & D
+  function arrastra(e) {
+    e.dataTransfer.setData("indice", e.target.indice);
+  }
+
+  function permiteArrastrar(e) {
+    e.preventDefault();  
+  }
+
+  function cambiaGrupo(e) {
+    e.preventDefault();
+
+    let a = e.dataTransfer.getData("indice");
+    let de = e.target.indice;
+
+    [ this.grupos[de], this.grupos[a] ] = [ this.grupos[a], this.grupos[de] ]
+
+    this.mstGrupos(grupos);
+  }

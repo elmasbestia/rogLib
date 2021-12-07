@@ -20,6 +20,8 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
               enlace      Hipervinculo
               titulo      Texto que aparece al pasar sobre la imagen
 	  Se pueden mezclar imágenes con videos y código
+	  @param fn			  Función que se ejecuta al mostrar una diapo
+	  					  Recibe la diapo y su indice
     */
     var Intervalo = intervalo;
     var diapos = [];
@@ -33,8 +35,7 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 			let diapos = base.querySelectorAll(".rogDiapo")
 			let btns = 	 base.querySelectorAll(".btnCarrusel")
 
-            diapos[indice].style.display = 'none';
-			//btns[indice].classList.remove("activa");
+			diapos[indice].classList.remove("activa");
 
             if(typeof(paso) === "number") {
                 if ((indice += paso) >= diapos.length) { indice = 0; }
@@ -42,8 +43,7 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
             } else {
             	indice = paso.target.attibute["data-indice"]
             }
-            diapos[indice].style.display = 'block';
-			//btns[indice].classList.add("activa");
+			diapos[indice].classList.add("activa");
 
             if(fn) fn(imagenes[indice],indice)
 
@@ -68,37 +68,47 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 		
 		_carrusel.className = "Diapos";
 		_carrusel.innerHTML =
-			"<aside class='crrAnt' onclick='avanza(-1)'><span class='flechita'>&#10094;</span></aside>";
-        
-		base.appendChild(_carrusel)
+			`<aside class='crrAnt' onclick='avanza(-1)'><span class='flechita'>&#10094;</span></aside>
+			<div class="pantalla"></div>
+			<aside class='crrSig' onclick='avanza()'><span class='flechita'>&#10095;</span></aside>`;
+
+		base.appendChild(_carrusel);
+
+		let _pantalla = base.querySelector(".pantalla");
 
         imagenes.forEach((x) => {
             let imagen = creaDiapo(x);
-            _carrusel.appendChild(imagen);
+            _pantalla.appendChild(imagen);
             diapos.push(imagen);
         });
-		_carrusel.innerHTML +=
-			"<aside class='crrSig' onclick='avanza()'><span class='flechita'>&#10095;</span></aside>"
-/*			
-		base.innerHTML += "</nav>" + diapos.map(
-			(x,i) => "<span class='btnCarrusel' data-indice='"+i+"' onclick='avanza()'></span>" 
-		).join("")+"</nav>"
-*/
     }
 
-    this.indice = () => indice
+    this.indice = () => indice;
 
     this.para = para;
     this.sigue = sigue;
     this.setIntervalo = (lapso) => { Intervalo = lapso }
     
-    if (directorio.charAt(directorio.length -1) != "/" && directorio.charAt(directorio.length -1) != "\\" ) { directorio +="/" }
+    if (!(directorio.endsWith("/") || directorio.endsWith("\\"))) directorio +="/";
     creaDiapos();
     creaCss();
     indice = diapos.length -1;
     avanza();
 
 	function creaDiapo(imagen) {
+		var fig = document.createElement("DIV");
+		
+		if (imagen.titulo) {fig.title = imagen.titulo}
+
+		fig.className = "rogDiapo";
+
+		if(typeof(imagen) === "string") fig.innerHTML += imagen;
+		else fig.appendChild(imagen.video ? creaVideo(imagen) : creaImg(imagen));
+		
+		return fig;
+	}
+
+	function creaDiapoFig(imagen) {
 		var fig = document.createElement("FIGURE");
 		
 		if(imagen.caption) {
@@ -107,9 +117,8 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 			fig.appendChild(figcaption);
 		}
 
-		if (imagen.titulo) {img.title = imagen.titulo}
+		if (imagen.titulo) {fig.title = imagen.titulo}
 
-		fig.style.display = "none";
 		fig.className = "rogDiapo";
 
 		if(typeof(imagen) === "string") fig.innerHTML += imagen;
@@ -119,8 +128,13 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 	}
 
 	function creaImg(imagen) {
+		function nbConExt(nb) {
+			let ext = Extension(nb);
+			return ext ? nb : nb+".jpg";
+		}
+
 		let img = document.createElement("IMG");
-		img.src = directorio + imagen.nb;
+		img.src = directorio + nbConExt(imagen.nb);
 		img.alt = imagen.alt || imagen.nb;
 
 		if (imagen.enlace) {
@@ -163,11 +177,12 @@ function creaCss() {
 
     css.agrega({
         ".Diapos": "height: 100%; display: flex;",
-        aside: "opacity: .3; display: flex; flex-direction: column; align-items: center; justify-content: center;",
-        "aside:hover": "opacity: 1;",
+        ".Diapos aside": "opacity: .3; display: flex; flex-direction: column; align-items: center; justify-content: center;",
+        ".Diapos aside:hover": "opacity: 1;",
         ".flechita": "cursor: pointer; background-color: darkgray; border-radius: 50%; padding: 0.5em;",
-        ".rogDiapo": "height: 100%;",
-        ".rogDiapo img": "max-width: 80vw"
+        ".rogDiapo": "height: 100%; display: none",
+		".rogDiapo.activa": "display: unset",
+        ".rogDiapo img": "max-width: 80vw",
     })
 }
 

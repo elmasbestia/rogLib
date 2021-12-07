@@ -1,0 +1,94 @@
+https://developer.okta.com/blog/2021/08/02/fix-common-problems-cors
+
+
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Fixing Common Issues with CORS</title>
+    </head>
+    <body>
+        <h1>Fixing Common Issues with CORS</h1>
+        <div>
+            <textarea id="messages" name="messages" rows="10" cols="50">Messages</textarea><br/>
+            <form id="form1">
+                <input type="button" value="Get v1" onclick="onGet('v1')"/>
+                <input type="button" value="Get v2" onclick="onGet('v2')"/>
+            </form>
+        </div>
+    </body>
+</html>
+
+function onGet(version) {
+    const url = "http://localhost:8000/api/" + version + "/messages";
+    var headers = {}
+    
+    fetch(url, {
+        method : "GET",
+        mode: 'cors',
+        headers: headers
+    })
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error(response.error)
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('messages').value = data.messages;
+    })
+    .catch(function(error) {
+        document.getElementById('messages').value = error;
+    });
+}
+
+
+
+package main
+
+import (
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
+)
+
+func main() {
+	r := gin.Default()
+	r.Use(static.Serve("/", static.LocalFile("./frontend", false)))
+	r.Run(":8080")
+}
+
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+var messages []string
+
+func GetMessages(c *gin.Context) {
+	version := c.Param("version")
+	fmt.Println("Version", version)
+	c.JSON(http.StatusOK, gin.H{"messages": messages})
+}
+
+func main() {
+	messages = append(messages, "Hello CORS!")
+	r := gin.Default()
+	r.GET("/api/:version/messages", GetMessages)
+	r.Run(":8000")
+}
+
+
+
+func GetMessages(c *gin.Context) {
+	version := c.Param("version")
+	fmt.Println("Version", version)
+	if version == "v2" {
+		c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
+	}
+	c.JSON(http.StatusOK, gin.H{"messages": messages})
+}
+

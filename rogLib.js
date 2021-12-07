@@ -44,7 +44,7 @@ function rogFmtFecha (f = new Date()) {
         //rogFmt.dd(f.getDate())+"/"+rogFmt.dd(f.getMonth() +1)+"/"+f.getFullYear(),
         am:  () => f.toJSON().slice(0,7),
         Hora: () => rogFmt.dd(f.getHours())+":"+rogFmt.dd(f.getMinutes()),
-        fSerial: () => limpiaPlb(f.toJSON()),
+        fSerial: () => limpiaF(f.toJSON()),
         //f.getFullYear()+rogFmt.dd(f.getMonth()+1)+rogFmt.dd(f.getDate()) +rogFmt.dd(f.getHours())+rogFmt.dd(f.getMinutes()),
         a: () => f.getFullYear(),
 		full: () => f.toJSON(),
@@ -125,9 +125,12 @@ function limpiaPlb(palabra = ""){
         Ü: "U",
         Ñ: "N"
     };
-    let reg = regExpLimpia = /[áéíóúñ]/ig;
 
-    return palabra.replace(reg, letra => sinAcento[letra])
+    return palabra.replace(/[áéíóúñ]/ig, letra => sinAcento[letra])
+}
+
+function limpiaF(f) {
+    return f.replace(/(\.|\:|[-A-Z])/gi,"")
 }
 
 function entreComillas(texto,simples) { return (simples ? "'" : '"') +texto +(simples ? "'" : '"')}
