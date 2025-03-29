@@ -1,16 +1,16 @@
 const _rogGenero = {
   observados: ["value", "presentacion"],
-
+﻿
   cambia: {
     value: (obj, viejo, nuevo) => {
       obj.dispatchEvent(new Event("onchange", { bubbles: true }));
     },
-
+﻿
     presentacion: (obj, viejo, nuevo) => {
       obj.dispatchEvent(new Event("onchange", { bubbles: true }));
     }
   },
-
+﻿
   tmpOpciones: (obj) => {
     return Object.entries(_rogGenero.opciones)
       .map(
@@ -21,12 +21,12 @@ const _rogGenero = {
       )
       .join("");
   },
-
+﻿
   chxOpcion: (e) => {
     const opcion = e.target;
     if (opcion.matches(".opcion")) opcion.obj.value = opcion.dataset.valor;
   },
-
+﻿
   opciones: [
     {
       simbolo: "♂",
@@ -49,28 +49,20 @@ class rogGenero extends HTMLElement {
     this.shadow = this.attachShadow({ mode: "open" });
   }
 
-  _get(que) {
-    return this.getAttribute(que);
-  }
-
-  _set(que, valor) {
-    this.setAttribute(que, valor);
-  }
-
   set value(valor) {
-    this._set("value", valor);
+    this.setAttribute("value", valor);
   }
 
   get value() {
-    return this._get("value") || 1;
+    return this.getAttribute("value") || 1;
   }
 
   set presentacion(valor) {
-    this._set("presentacion", valor);
+    this.setAttribute("presentacion", isNaN(valor) ? valor : this.presentaciones[valor]);
   }
 
   get presentacion() {
-    return this._get("presentacion") || "simbolo";
+    return this.getAttribute("presentacion") || "simbolo";
   }
 
   valor(presentacion = this.presentacion) {
@@ -109,10 +101,16 @@ customElements.define("rog-genero", rogGenero);
 
 function tmpROGGenero(obj) {
   return `<style>
-      #mnucito {
+      ul {
+        opacity: 1;
         display: flex;
         gap: 1em;
+        
         list-style-type: none;
+
+        margin-block-start: 0;
+        margin-block-end: 0;
+        padding-inline-start: 0;
       }
 
       .vidrio {
@@ -133,14 +131,19 @@ function tmpROGGenero(obj) {
 
         border-radius: 5px;
         padding: 1em;
-        shadow-box: 2px 3px 5px black;
+        box-shadow: 2px 3px 5px black;
 
         scale: 0;
         transition: scale 150ms ease-out;
       }
 
+      .mnuFlotante li {
+        padding: .5em;
+      }
+
       .mnuFlotante li:hover {
         font-weight: bolder;
+        box-shadow: 1px 1.5px 2px black;
       }
 
       .marco {
@@ -156,8 +159,10 @@ function tmpROGGenero(obj) {
     <fieldset class="marco">
       <label for="genero">Género</label>
       <div id="valor">${obj.valor()}</div>
-      <ul id="mnucito" class="vidrio mnuFlotante" onblur="escondeMnu(event)">
-        ${_rogGenero.tmpOpciones(obj)}
-      </ul>
+      <div class="vidrio mnuFlotante">
+        <ul onblur="escondeMnu(event)">
+          ${_rogGenero.tmpOpciones(obj)}
+        </ul>
+      </div>
   </fieldset>`;
 }
