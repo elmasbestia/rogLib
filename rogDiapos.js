@@ -24,12 +24,15 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 	  					  Recibe la diapo y su indice
     */
     var Intervalo = intervalo;
+	var taima;
     var diapos = [];
     var base = typeof dom === "string" ? document.getElementById(dom) : dom;
     var indice = 0;
 	var _sigue = true;
     
     function avanza(paso = 1) {
+		clearTimeout(taima);
+		
         if (_sigue) {
 			// Hasta que encuentre porqué diapos pierde la identidad:
 			let diapos = base.querySelectorAll(".rogDiapo")
@@ -50,8 +53,13 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
             arranca();
         }
     }
+
+	function retro() {
+		avanza(-1);
+	}
+
     function arranca() {
-        setTimeout(avanza,Intervalo);
+        taima = setTimeout(avanza,Intervalo);
     }
 
 	function sigue() {
@@ -63,16 +71,18 @@ function rogDiapos(dom,directorio,imagenes,intervalo = 3500,fn) {
 		_sigue = false;
 	}
 
-    function creaDiapos() {
+	function creaDiapos() {
 		let _carrusel = document.createElement("DIV");
 		
 		_carrusel.className = "Diapos";
 		_carrusel.innerHTML =
-			`<aside class='crrAnt' onclick='avanza(-1)'><span class='flechita'>&#10094;</span></aside>
+			`<aside class='crrAnt''><span class='flechita'>&#10094;</span></aside>
 			<div class="pantalla"></div>
-			<aside class='crrSig' onclick='avanza()'><span class='flechita'>&#10095;</span></aside>`;
+			<aside class='crrSig'><span class='flechita'>&#10095;</span></aside>`;
 
 		base.appendChild(_carrusel);
+		base.querySelector(".crrSig").onclick= avanza.bind(this);
+		base.querySelector(".crrAnt").onclick= retro.bind(this);
 
 		let _pantalla = base.querySelector(".pantalla");
 
@@ -173,17 +183,21 @@ function chkDiapos(diapos) {
 }
 
 function creaCss() {
-    const css = new rogCSS()
-
-    css.agrega({
-        ".Diapos": "height: 100%; display: flex;",
-        ".Diapos aside": "opacity: .3; display: flex; flex-direction: column; align-items: center; justify-content: center;",
-        ".Diapos aside:hover": "opacity: 1;",
-        ".flechita": "cursor: pointer; background-color: darkgray; border-radius: 50%; padding: 0.5em;",
-        ".rogDiapo": "height: 100%; display: none",
-		".rogDiapo.activa": "display: unset",
-        ".rogDiapo img": "max-width: 80vw",
-    })
+    const css = new rogCSS(
+		[
+			".Diapos {height: 100%; width: 100%; position: relative;}",
+			".pantalla {height: 100%}",
+			".Diapos aside {position: absolute;}",
+			".Diapos aside {border: 1px solid red}",
+			".crrAnt {left: 0; top: 0}",
+			".crrSig {right: 0; top: 0}",
+			".Diapos aside {height: 100%; opacity: .3; display: flex; flex-direction: column; align-items: center; justify-content: center;}",
+			".Diapos aside:hover {opacity: 1;}",
+			".flechita {cursor: pointer; background-color: darkgray; border-radius: 50%; padding: 0.5em;}",
+			".rogDiapo {height: 100%; display: none}",
+			".rogDiapo.activa {display: unset}",
+		]
+	);
 }
 
     

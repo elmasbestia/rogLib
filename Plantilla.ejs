@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%- include('./encabezado',{modulos: ["Bsq","Vnt","Tab"]}); %>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+
+    <script>
+        let frm;
+
+        function lee(frm) {
+
+        }
+
+        function anula() {
+            alert("¡Ciao, chigüire!")
+            window.close()
+        }
+
+        function debut() {
+            frm = document.forms[0];
+            frm.btn = frm.querySelector("[type=submit]")
+
+            frm.addEventListener('submit', event => {
+                event.preventDefault();
+                lee(frm);
+            })
+       }
+    </script>
+</head>
+
+<body onload="debut()">
+    <% 
+        function msjError(campo) {
+            console.log("msj Error")
+            console.log(error)
+            return error.campo === campo ? error.msj : "";
+        }
+    %> 
+    <header>
+    </header>
+    <div class="card">
+    <form>
+        <header class="form-group">
+            <h1></h1>
+            <div class="msj msjInfo"></div>
+            <h2><%= api %></h2>
+            <div>
+        </header>
+        <div class="form-group">
+        </div>
+        <fieldset class="form-group botonera">
+            <input type="submit" class="rogBtn" title="Valida los datos" value="Valida">
+            <input type="reset"  class="rogBtn">
+            <button class="rogBtn" onclick="anula()">Cancela</button>
+            <span class="rogBtn" onclick="nysm()" title="Ver la clave"><i class="far fa-eye-slash"></i></span>
+        </fieldset>
+    </form>
+    </div>
+<%- include('./footer',{}); %>
+</body>

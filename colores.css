@@ -1,0 +1,112 @@
+uno {
+    --morado: #87629a;
+    --verde: #136c72;
+    --verde-claro: #38cfd9;
+    --verde-oscuro: #23424a;
+}
+
+/* HSL */
+uno .hsl {
+    --color1: hsla(30%, 4%, 63%, 1);
+    --color2: hsla(201%, 34%, 58%, 1);
+    --color3: hsla(33%, 82%, 84%, 1);
+    --color4: hsla(59%, 20%, 100%, 1);
+    --color5: hsla(254%, 33%, 89%, 1);
+}
+
+/* RGB */
+uno .rgb {
+    --color1: rgba(161, 158, 155, 1);
+    --color2: rgba(98, 131, 149, 1);
+    --color3: rgba(215, 134, 38, 1);
+    --color4: rgba(255, 254, 203, 1);
+    --color5: rgba(170, 153, 228, 1);
+}
+
+/* HEX */
+uno .hex {
+    --gris: #a19e9bff;
+    --azul: #628395ff;
+    --arena: #d78626ff;
+    --crema: #fffecbff;
+    --morado: #aa99e4ff;
+}
+
+/* GRADIENT */
+gradientes {
+    --uno: #a19e9bff;
+    --dos: #628395ff;
+    --tres: #d78626;
+    --cuatro: #fffecb;
+    --cinco: #aa99e4;
+
+    --gradiente-top: linear-gradient(0deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-right: linear-gradient(90deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-bottom: linear-gradient(180deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-left: linear-gradient(270deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-top-right: linear-gradient(45deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-bottom-right: linear-gradient(135deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-top-left: linear-gradient(225deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-bottom-left: linear-gradient(315deg, var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+    --gradiente-radial: radial-gradient(var(--uno), var(--dos), var(--tres), var(--cuatro), var(--cinco));
+}
+
+
+        :root {
+            --clrEnfasis:   rgb(254, 74, 254, 0.5);
+            --clrMenu:      rgb(40, 164, 164);
+			--clrFondo:     rgb(164, 164, 164, 0.5);
+			--clrTxt:       black;
+			--cltTxtEnh:    orange;
+			--clrFotoMarco: white;
+			--clrFndLst:    #f9f9f9;
+			--clrTxtLst:    black;
+        }
+
+/*
+10 "color"
+ 1. background-color: var(--clrEnfasis);
+ 2. color: orange;  
+ 3. background-color: var(--clrMenu);
+ 4. background-color: var(--clrEnfasis); li:hover
+ 5. color: white; li:hover
+ 6. color: orange; txtEnh
+ 7. background-color: transparent;
+    box-shadow: 2px 4px orange; txtEnh
+ 8. background-color: white; (fotoMarco)
+ 9. background-color: #f9f9f9; lista
+    box-shadow: 0px 8px 16px 0px rgba(10, 10, 10, 0.2); lista
+10.              color: black; listas
+*/
+
+dos {
+	--clrEnfasis:   rgb(164, 164, 164, 0.5);
+	--clrNav:       rgb(40, 164, 164);
+	--clrFondo:     rgb(164, 164, 164, 0.5);
+	--clrTxt:       black;
+	--cltTxtEnh:    orange;
+	--clrTxtChx:    white;
+	--clrFndChx:    transparent;
+	--clrFotoMarco: white;
+	--clrFndLst:    #f9f9f9;
+	--clrTxtLst:    black;
+
+    --gris: #a19e9bff;
+    --azul: #628395ff;
+    --arena: #d78626;
+    --crema: #fffecb;
+    --morado: #aa99e4;
+
+    --Choco: #5a311d;
+    --otroCrema: #fee89d;
+    --rojo: #bc071a;
+}
+
+/*
+let colores = {
+  ARENAS: ["#d87e30", "#d78626", "#f7d794", "#f5cd79"],
+  AZUL: ["#778beb", "#546de5", "#3dc1d3"],
+  GRIS: ["#596275", "#303952"],
+  ROJOS: ["#f19066", "#e66767", "#c44569", "#cf6a87"]
+};
+*/

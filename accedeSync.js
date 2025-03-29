@@ -15,7 +15,16 @@ exports.accede = function (accion,url,fn,datos) {
 		console.log(xobj.accion+"\n"+xobj.url+"\n¡E R R O R!!!\nStatus: " +xobj.status +" (" +xobj.statusText+")\n"+xobj.status);
         retorno = (xobj.responseText.fallo ? JSON.parse(xobj.responseText)  : respuestaError(xobj));
 	}
-     
+
+    function mstStatus(xobj) {
+        console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")");
+    }
+    
+    function aborta(e) {
+        mstStatus();
+        msjErrorXML(e);
+    }
+
     xobj.accion = accion;
     xobj.url    = url;
      
@@ -23,9 +32,10 @@ exports.accede = function (accion,url,fn,datos) {
     xobj.withCredentials = true;
     xobj.open(accion, url, false);
     xobj.setRequestHeader('Content-type','application/json; charset=utf-8');
-    xobj.onerror = msjErrorXML;
-    xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")") };
+    xobj.onerror = aborta;
+//    xobj.onreadystatechange = () => { console.log(xobj.readyState, url, xmlEstado[xobj.readyState]," (", xobj.status,")") };
     xobj.onload = () => {
+        mstStatus();
 		if (!xobj.status || (xobj.status > 400)) msjErrorXML()
         else {
             retorno = JSON.parse(xobj.responseText);

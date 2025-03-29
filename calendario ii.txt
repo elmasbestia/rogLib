@@ -1,0 +1,349 @@
+/*
+    L A P S O S
+    Manejo de Lapsos temporales:
+    Puede ser un mes
+    o el período definido por dos fechas
+*/
+
+    /**
+    * Lapso de días en un mes
+    * @param {date} fecha 
+    * @returns {array} Fechas
+    */
+    function rogMes(fecha) {
+        return new rogLapso(fecha)
+    }
+
+    /**
+     * Días en un lapso de tiempo
+     * @param {date} desde fecha inicial del Lapso
+     * @param {date} hasta fecha final del lapso
+     * @returns {array} Fechas
+     */
+    function creaDiasLapso(desde,hasta) {
+        let retorno = [];
+  
+        for(let xFecha = new Date(desde);
+            xFecha <= hasta;
+            xFecha = fSuma(1,xFecha)
+        ) retorno.push(xFecha);
+  
+        return retorno;
+    }
+
+/**
+ * Objeto Lapso entre dos fechas
+ * @param {date} desde 
+ * @param {date} hasta 
+ */
+class rogLapso {
+    #x = 0; #n = 0;
+
+    constructor (desde,hasta) {
+        this.desde = creaFecha(desde);
+        this.hasta = hasta ? creaFecha(hasta) : ultimo(this.desde);
+        this.dias = creaDiasLapso(this.desde, this.hasta);
+        this.#n = this.dias.length
+    }
+
+    get esMes () {
+        return ((igual(this.dias[0], primero(this.desde))) && (igual(this.hasta,ultimo(this.desde))))
+    }
+
+    get primero () {
+        return this.desde;
+    }
+
+    get siguiente () {
+        if(this.#x === this.#n) return null
+        else return new rogFecha(this.dias[this.#x++]);
+    }
+
+    ciclo (fn) {
+        this.dias.forEach(dia => {
+            fn(new rogFecha(dia));
+        });
+    }
+
+    toString () {
+        if(this.esMes) return rogFmtFecha(this.desde)[this.esteAno() ? 'mmmm' : 'nbMes']();
+        
+        return `Desde ${rogFmtFecha(this.desde).dma()} hasta ${rogFmtFecha(this.hasta).dma()}`;
+    }
+
+    esteAno (ano = (new Date()).getFullYear()) {
+        return this.getFullYear() === ano;
+    }
+
+    getFullYear = function () { return this.desde.getFullYear()}
+    getMonth = function () { return this.desde.getMonth()}
+    getDate = function () { return this.desde.getDate()};
+    getDay = function () { return this.desde.getDay()};
+
+    Calendario (dom, acciones, llenaDia) { return new rogCalendario(this, dom, acciones, llenaDia)};
+}    
+  
+/**
+* Objeto Calendario
+*
+* @param {number | date | rogLapso} [mes=new Date()]
+* @param {string} [dom]
+* @param {array} acciones arreglo de objetos { accion: funcion } se registran como eventos para cada "día" con @method addEventListener
+*                  1er. elemento: Acciones para los elementos previos al día 1.
+*                  2do. elemento: Acciones para los días del mes
+* @param {function} llenaDia function para dibujar cada día
+*/
+class rogCalendario {
+    #w = {};
+    constructor (mes = new Date(), dom = document.querySelector(".calMes"), acciones, llenaDia) {
+        this.dom = dom;
+        this.acciones = acciones,
+        this.llenaDia = llenaDia;
+        this.mes = mes;
+    }
+
+    set dom(valor) {
+        this.#w.dom = objDom(valor);
+        this.dom.obj = this;
+    }
+
+    get dom() {
+        return this.#w.dom;
+    }
+
+    set mes(valor) {
+        this.#w.mes = (valor instanceof rogLapso) ? 
+            valor :
+            new rogLapso(valor);
+        this.mst();
+    }
+
+    get mes() {
+        return this.#w.mes;
+    }
+    
+    /**
+     * Contenido por defecto de un día del calendario @element
+     * @param {element} dia 
+     * @param {date} fecha fecha a la que corresponde el día
+     */
+    defLlenaDia(dia, fecha) {
+        dia.innerHTML = domFecha(fecha.fecha,"dd");
+    }
+
+    set llenaDia(fn) {
+        this.#w.llenaDia = fn ?
+            function (dia, fecha) {
+                this.defLlenaDia(dia,fecha);
+                fn(dia, fecha);
+            } :
+            this.defLlenaDia
+    }
+
+    get llenaDia() {
+        return this.#w.llenaDia.bind(this);
+    }
+	
+	set foto(urlFoto) {
+		this.dom.style.backgroundImage = `url('${urlFoto}')`;           
+	}
+
+    /**
+     * Muestra el Mes siguiente
+     */
+    mesSig() {
+        this.mes = new Date(this.mes.getFullYear(), this.mes.getMonth() +1);
+    }
+    /**
+     * Muestra el Mes anterior
+     */
+    mesAnt() {
+        this.mes = new Date(this.mes.getFullYear(), this.mes.getMonth() -1);
+    }
+
+    /**
+    *   Muestra el calendario del mes correspondiente a @param mes
+    *   en el DOM @param dom
+    *   y le asigna a cada "día" los eventos indicados en @param Acciones
+    */
+    /**
+    *   Para efectos de CSS, se preveen las siguientes CLASES:
+    *       1. calMes    contenedor del Calendario
+    *       2. calSem    Cada línea de siete días
+    *       3. calDia    Cada Día del Mes
+    *       4. calNoMes  Días al inicio y al final que no corresponden al lapso
+    *       5. calNbMes  espacio donde se muestra el nombre del lapso
+    *       6. calTitSem Nombres de los días de la semana
+    *       7. chxTit    Nombre del día que tiene el foco
+    *       7. calMesSig indicador del Mes Siguiente
+    *       8. calMesAnt indicador del Mes Anterior
+    *       9. noLaboral Día no laboral
+    */
+    mst() {
+        this.dom.classList.add("calMes");
+
+        this.dom.innerHTML = "";
+
+        this.dom.appendChild(calNbMes(this.mes));
+        this.dom.querySelector(".calMesAnt").addEventListener("click",this.mesAnt.bind(this));
+        this.dom.querySelector(".calMesSig").addEventListener("click",this.mesSig.bind(this));
+
+        this.dom.dispatchEvent(new Event("antesDeMostrar"))
+
+        const semana = new Semana(this.mes.getDay(),this.dom);
+
+        this.mes.ciclo(((llenaDia,semana,acciones) => {
+            return (xFecha) => {
+            let dia = document.createElement("DIV");
+            dia.className = "calCelda calDia" +xFecha.clase();
+            dia.addEventListener("mouseover",chxTit);
+            dia.addEventListener("mouseout",outTit);
+            dia.fecha = xFecha;
+            
+            llenaDia (dia,xFecha);
+            semana.anade(dia);
+        }})(this.llenaDia,semana));
+
+        semana.ultima();
+
+        asignaAcciones(this.acciones,this.dom)
+
+        this.dom.dispatchEvent(new Event("despuesDeMostrar"))
+    }
+}
+
+class Semana {
+    #semana = document.createElement("SECTION");
+    #dom;
+    constructor(inicio,dom) {
+        this.dom = dom;
+
+        if (inicio) this.noMes(inicio) // Primera Semana (Días del mes anterior)
+    }
+
+    set dom(dom) {
+        this.#dom = objDom(dom);
+    }
+
+    get dom() {
+        return this.#dom;
+    }
+
+    set semana(valor) {
+        this.#semana.className="calSem";
+        this.dom.appendChild(this.#semana);
+        this.#semana = document.createElement("SECTION");
+    }
+
+    anade(dia) {
+        if (this.#semana.children.length === 7) this.semana = this.#semana;
+
+        this.#semana.appendChild(dia);
+    }        
+    
+    noMes(nDias) {
+        for(let x = 0; x < nDias; x++) {
+            let dia = document.createElement("DIV");
+            dia.className = "calCelda calNoMes";
+            this.anade(dia);
+        }
+    }
+
+    ultima() {
+        let dias = this.#semana.children.length;
+        if (dias) {
+            this.noMes(7 -dias);
+            this.semana = this.#semana;
+        }
+    }
+}
+
+/**
+ * Asigna las acciones previstas para los días del Calendario
+ * @param {array} acciones 
+ */
+function asignaAcciones(acciones,dom) {
+    if(acciones) {
+        [".calNoMes",".calDia"].forEach((tipo,i) => {
+            if(acciones[i]) Object.entries(acciones[i]).forEach(([accion, fn]) => dom.querySelectorAll(tipo).forEach(x => x.addEventListener(accion, fn)));
+        })
+    }
+}
+
+/**
+ * Muestra las propiedades del @object rogFecha y sus valores por defecto
+ */
+function muestraProps() {
+    let f = new rogFecha()
+    
+    const propiedades = []
+    
+    for(x in f) {
+      if(x === "Calendario") continue
+      //console.log(x)
+      propiedades.push({x, valor: f[x] instanceof Function ? f[x]() : f[x]})
+    }
+    
+    mstTabla(propiedades,"muestra");
+}
+
+function mstFrmLapso() {
+    document.querySelector("#frmLapso").classList.toggle("activa");                
+}
+
+function leeFrmLapso(e) {
+    mstFrmLapso();
+    const cal = rogAncetre(e.target,".calMes");
+    const [desde, hasta] = Array.from(cal.querySelectorAll("input")).map(x => x.valueAsDate)
+    cal.obj.mes = new rogLapso(desde,hasta);
+}
+
+/**
+ * Devuelve el texto de un @element time para una fecha dada
+ * @param {date} fecha 
+ * @param {string} fmtFecha Formato de la fecha según @function rogFmtFecha
+ * @returns {string}
+ */    
+function domFecha(fecha, fmt) {
+    return `<time datetime='${fecha}'>${rogFmtFecha(fecha)[fmt]()}</time>`;
+}
+
+/**
+ * Selecciona el nombre del Día que tiene el foco
+ * @param {event} e 
+ */
+function chxTit(e) {
+    const i = e.currentTarget.fecha.getDay();
+    document.querySelectorAll(".calTitSem > div")[i].classList.add("chxTit");
+}
+
+/**
+ * Deselecciona el nombre del día que pierde el foco
+ */
+function outTit() {
+    document.querySelector(".chxTit").classList.remove("chxTit");
+}
+
+function calNbMes(mes) {
+    const retorno = document.createElement("SECTION");
+    retorno.innerHTML = `<dialog id="frmLapso">
+    <label for="desde">Desde</label>
+    <input type="date" name="desde">
+    <label for="hasta">Hasta</label>
+    <input type="date" name="hasta">
+    <nav>
+        <button class="rogBtn" onclick="leeFrmLapso(event)">✔</button>
+        <button class="rogBtn" onclick="mstFrmLapso()">✘</button>
+    </nav>
+    </dialog>
+
+    <h3 class="calNbMes" ondblclick="mstFrmLapso()">
+        <span class="calMesAnt">◀</span>
+        ${mes.toString()}
+        <span class="calMesSig">▶</span>
+        </h3>
+        <div class="calTitSem">
+            ${rogFmt.Fecha().lstDias().map(x => `<div>${x}</div>`).join("")}
+        </div>`
+    return retorno;
+}

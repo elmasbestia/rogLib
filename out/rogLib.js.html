@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: rogLib.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: rogLib.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// Librería de funciones para JS
+// Autor: Rafa Gómez https://rafagomez.neocities.org
+
+// Formatos
+const rogFmt = {
+    Moneda: new Intl.NumberFormat('VES', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format,
+    Ent: new Intl.NumberFormat('VES', {
+        style: 'decimal',
+        maximumFractionDigits: 0
+    }).format,
+    Prc: new Intl.NumberFormat('VES', {
+        style: 'percent',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format,
+    Tlf: nro => {
+        let _nro = nro.toString();
+        return `(${_nro.slice(0,3)}) ${_nro.slice(3,6)}  ${_nro.slice(7)}`
+    },
+    dd: nro => nro.toString().padStart(2,"0"),
+    Fecha: rogFmtFecha,
+    Lapso: (desde = new Date(), hasta = new Date()) => `Desde el ${rogFmt.Fecha(desde).dma()} hasta el ${rogFmt.Fecha(hasta).dma()}`
+}
+
+function rogFmtFecha(f = new Date()) {
+  const dicc = {
+    fmts: {
+      dd: () => rogFmt.dd(elementos.dia),
+      ddd: () => trad("dia", elementos.nbDia).slice(0, 3),
+      dddd: () => trad("dia", elementos.nbDia),
+      mmmm: () => trad("mes", elementos.nbMes),
+      mmm: () => trad("mes", elementos.nbMes).slice(0, 3),
+      mm: () => rogFmt.dd(indice(elementos.nbMes, dicc.mes) + 1),
+      aa: () => elementos.ano.slice(2),
+      aaaa: () => elementos.ano,
+      hh: () => elementos.hora.slice(0, 5),
+      hhhh: () => elementos.hora,
+      amd: (separador = "-") =>
+        fmt("aaaa") + separador + fmt("mm") + separador + fmt("dd"),
+      am: () => intp("aaaa / mm").replace(/[\s]/g, ""),
+      dma: (separador = "/") =>
+        fmt("dd") + separador + fmt("mm") + separador + fmt("aaaa"),
+      cool: () => intp("ddd dd de mmm aaaa"),
+      coolfull: () => intp("ddd dd de mmm aaaa hh"),
+      serial: () => intp("aa mm dd hhhh").replace(/[\s:]/g, ""),
+      full: () => intp("aa mm dd hhhh"),
+      serio: () => intp("dddd dd de mmmm de aaaa"),
+      evento: () => intp("ddd dd hh"),
+      nbMes: (corto = false) => intp(corto ? "mmm aa" : "mmmm de aaaa"),
+      lstMeses: () => Object.entries(dicc.mes).map(x => x[1]),
+      lstDias: () => Object.entries(dicc.dia).map(x => x[1])
+    },
+    mes: {
+      Jan: "Enero",
+      Feb: "Febrero",
+      Mar: "Marzo",
+      Apr: "Abril",
+      May: "Mayo",
+      Jun: "Junio",
+      Jul: "Julio",
+      Aug: "Agosto",
+      Sep: "Septiembre",
+      Oct: "Octubre",
+      Nov: "Noviembre",
+      Dic: "Diciembre"
+    },
+    dia: {
+      Sun: "Domingo",
+      Mon: "Lunes",
+      Tue: "Martes",
+      Wed: "Miércoles",
+      Thu: "Jueves",
+      Fri: "Viernes",
+      Sat: "Sábado"
+    }
+  };
+
+  const indice = (valor, obj) => Object.keys(obj).findIndex((x) => x === valor);
+  const fmt = (que) => (dicc.fmts[que] ? dicc.fmts[que]() : que);
+  const trad = (que, valor) => dicc[que][valor];
+  const intp = (cadena) => cadena.split(" ").map(fmt).join(" ");
+
+  const elementos = parseFecha(creaFecha(f));
+
+  function parseFecha(f) {
+    const cadenas = f.toString().split(" ");
+    return ["nbDia", "nbMes", "dia", "ano", "hora"].reduce((el, x, i) => {
+      el[x] = cadenas[i];
+      return el;
+    }, {});
+  }
+
+  return dicc.fmts;
+}
+
+// Creación de fechas
+function creaFecha(ano, mes, dia) {
+        // Devuelve un objeto fecha a partir de los parámetros enviados
+        // si no se envía nada, devuelve la fecha de hoy
+        var fecha;
+        
+        if (mes === undefined) {
+            if (ano === undefined) {
+              let hoy = new Date();
+              if(dia === undefined) fecha = hoy;
+              else fecha = new Date(hoy.getFullYear(), hoy.getMonth(), dia);
+            } else {
+                if (typeof(ano) === "object") fecha = ano instanceof Date ? ano : ano.fecha()
+                else {fecha = new Date(ano) }
+            }
+        } else {
+            if (ano === undefined) fecha = new Date(ano,mes);
+            else fecha = new Date(ano, mes, dia || 1);
+        }
+        return fecha.toString() === "Invalid Date" ? undefined : fecha;
+}
+
+function escogeUna(a) {
+	return desarma(a)[Math.floor(Math.random() *a.length)]
+}
+
+//              Funciones con DOM
+function objDom(dom) { return typeof dom === "string" ? document.getElementById(dom) : dom }
+
+function objVacio(obj) { return !(obj &amp;&amp; Object.entries(obj).length) }
+
+function valDom(nb) { return document.querySelector("[name="+nb+"]").value }
+
+function jeto(que,valor) {
+    // Crea un objeto con el @param valor en la propiedad @param que
+    let obj = {};
+    if(que instanceof Array) que.forEach(x => obj[x] = valor[x]);
+    else obj[que] = valor;
+    return obj;
+}
+
+function limpiaPlb(palabra = ""){
+    // retorna una cadena sin acentos
+    let sinAcento = {
+        á: "a",
+        é: "e",
+        í: "i",
+        ó: "o",
+        ú: "u",
+        ü: "u",
+        ñ: "n",
+        Á: "A",
+        É: "E",
+        Í: "I",
+        Ó: "O",
+        Ú: "U",
+        Ü: "U",
+        Ñ: "N"
+    };
+
+    return palabra.replace(/[áéíóúñ]/ig, letra => sinAcento[letra])
+}
+
+function limpiaF(f) {
+    // Devuelve una fecha sin separadores
+    return f.replace(/(\.|\:|[-A-Z])/gi,"")
+}
+
+function entreComillas(texto,simples) { return (simples ? "'" : '"') +texto +(simples ? "'" : '"')}
+
+function rogUrlPrm() {
+    // Devuelve los parametros pasados a traves de la url
+    var prms = {};
+    var partes = window.location.href.replace(
+		/[?&amp;]+([^=&amp;]+)=([^&amp;]*)/gi, 
+		(m,que,valor) => 
+			prms[que] = decodeURIComponent(valor)
+    );
+    return prms;
+}
+
+function spanCant(cant,opcional) {
+  return opcional &amp;&amp; !cant ? "" : "&lt;sup>&lt;span class='badge'>"+cant+"&lt;/span>&lt;/sup>"
+}
+
+const domTxt = (contenido,que,clase,opcs = {}) => `&lt;${que} ${clase ? " class='" +clase+"'" : ""}${creaOpcs(opcs)}>${contenido}&lt;/${que}>`;
+
+function creaOpcs(opcs) {
+    function nbAtributo(atrib) {
+        return atrib === "cursor" ? "style.cursor" : atrib;
+    }
+    
+    return Object.keys(opcs).map(x => ` ${nbAtributo(x)}= '${opcs[x]}'`).join(" ")
+}
+
+function nivelDe(dom) {
+    return Array.from(objDom(dom).classList).find(x => x.startsWith("rog"))
+}
+
+function rogActiva(opc, nivel = "."+nivelDe(opc),toggle=false,activa = "activa") {
+  let actual = document.querySelector(`${nivel}.${activa}`);
+  
+  if(actual === opc) {
+    if(toggle) actual.classList.toggle(activa);
+    else actual.classList.add(activa);
+  } else {
+    if(actual) actual.classList.remove(activa);
+    opc.classList.add(activa);
+  }
+}
+
+// Funciones 
+
+const def = x => x || "";
+
+function strCompara(campo,descendente){
+    /*
+        Retorna una función que compara dos objetos sobre la base de uno o varios de sus elementos
+        @param campo      : es la lista de elementos a comparar
+        @param descendente: si es verdadero, la comparación es descendente 
+
+        Uso: para el método "sort" de un arreglo de objetos
+    */
+    
+    var menor = -1, mayor = 1;
+    var que = campo;
+    const comp1 = (a,b) => (def(a[que]) &lt; def(b[que])) ? menor : (def(a[que]) > def(b[que])) ? mayor : 0;
+    let _campos = desarma(que);
+    function comp(a,b) {
+      let i = 0;
+      do {
+        que = _campos[i];
+        retorno = comp1(a,b);
+      } while (++i &lt; _campos.length &amp;&amp; !retorno);
+      return retorno;
+    }
+    if (descendente) {
+        menor = 1;
+        mayor = -1;
+    }
+    if (_campos.length === 1) return comp1;
+    else return comp;
+}
+
+function desarma(lista) {
+    // Crea un arreglo a partir de:
+    // 1. Una lista de palabras separada por coma y un espacio en una cadena de caracteres: "A, B, C"
+    // 2. Un objeto: { A: ..., B: ..., C: ... }
+    // 3. Si @param valores es Un arreglo devuelve la referencia correspondiente
+
+    let retorno = [];
+    if(lista) {
+        if(lista instanceof Array) retorno = lista;
+        else if(typeof lista === "string") retorno = lista.split(", ");
+        else retorno = Object.keys(lista);
+    }
+    return retorno;
+}
+
+function desarmaObj(obj) {
+    // Crea un arreglo con las propiedades de un Objeto
+	return Object.keys(obj).map(x => obj[x]);
+}
+
+const nbSerial = (prefijo = "") => prefijo +rogFmt.Fecha().serial();
+
+function Extension(nbArchivo){
+    const pos = nbArchivo.lastIndexOf(".");
+    let retorno = pos >= 0 ? nbArchivo.slice(pos +1) : "";
+    return retorno.startsWith("/") ? "" : retorno;
+}
+        
+function nbArchivo(txt) {
+    let pos = txt.lastIndexOf(".");
+    return txt.slice(0,pos);
+}
+
+function domVacia(dom) {
+    return !Boolean(objDom(dom).textContent);
+}
+
+function vntSpecs(cambios ={}) {
+    const defecto = {
+        fullscreen: 0,
+        height: 800, 
+        width: 600,
+        left: 200, 
+        top: 200,
+        location: 0,
+        menubar: 0,
+        resizable: 1,
+        scrollbars: 0,
+        status: 1,
+        titlebar: 1,
+        toolbar: 0
+    }
+
+    const retorno = Object.assign(defecto,cambios);
+    return Object.entries(retorno).map(x => `${x[0]}=${x[1]}`).join(", ")
+}
+
+function otraVnt(url, cambios) {
+    if (typeof url === "object") url = url.target.url;
+    window.open(url, "_blank", vntSpecs(cambios));
+    return false;
+}
+
+function neaVnt(contenido) {
+    var vnt = window.open("");
+    vnt.document.write(contenido);
+}
+  
+function rogAsigna(selector,evento,fn) {
+    let arreglo = selector;
+    if(typeof selector === "string") arreglo = document.querySelectorAll(selector);
+    else if(!selector.__proto__.hasOwnProperty("length")) arreglo = [selector];
+
+    for(let x = 0; x &lt; arreglo.length;x++) {
+        arreglo[x].i = x;
+        if(evento.startsWith("on")) arreglo[x][evento] = fn;
+        else arreglo[x].addEventListener(evento,fn);
+        arreglo[x].style.cursor = "pointer";
+    }
+}
+
+function rogPrm(prm) {
+    /*
+        Recibe: Un evento o un valor
+        Retorna:
+            1. @param prm
+            2. La propiedad value del evento
+            3. La propiedad textContent del evento
+    */
+    return prm.target ?
+        (prm.target.value === undefined ?
+        prm.target.textContent : prm.target.value)
+    : prm
+}
+
+function btnDefault(dom,boton,fn = Boolean) {
+    /*
+        Enlaza @param boton con la lectura del elemento @param dom
+        Cuando se dispara el evento "oninput" de @param dom, se evalua la función @param fn
+        y @param boton se habilita o no
+        Cuando se pulsa [Enter] se ejecuta el evento click de @param boton
+    */ 
+	let btn = objDom(boton);
+    let obj = objDom(dom);
+
+	obj.oninput = (e) => { btn.disabled = !fn(e.target.value) };
+	obj.onkeypress = (e) => { if(e.keyCode === 13) btn.click() };
+}
+
+function modCss(dom,reglas) {
+    /*
+        Modifica la propiedad "style" de @param dom
+        con las reglas en el arreglo @param reglas
+    */
+	let css = objDom(dom).style;
+	let asignaCss = x => css[x[0]] = x[1];
+	for (let regla in reglas) {
+		if(reglas[regla] instanceof Array ) {
+			reglas[regla].forEach(asignaCss);
+		} else css[regla] = reglas[regla];
+	}
+}
+
+const inception = "10.46.4.17";
+
+function accede(accion,url,fn,datos) {
+    /**
+        Ejecuta @param {string} acción http sobre la dirección @param {string} url
+        Envía @param {object} datos como "body" de la acción
+
+        Según el retorno:
+        Si hay un error o el retorno tiene la propiedad "fallo" en "true"
+        Se muestra un mensaje (alert)
+        
+        Se llama @param {function} fn con el retorno como argumento, dependiendo del error
+
+        IDENTIFICACIÓN
+        Se usa el localStorage para controlar la sesión de trabajo con JWT
+    */
+    let xobj = new XMLHttpRequest();
+    let xmlEstado = ["No inicializado", "Conectado", "Recibido", "Procesando", "Listo"];
+
+	function retorno(xobj) {
+        if(xobj.tipoResultado === "error") {
+            alert(msjError(xobj));
+            rogFallo(objError(xobj));
+        } else {
+            if(xobj.tipoResultado === "página") neaVnt(xobj.resultado);
+            else {
+                if(fn) fn(xobj.resultado);
+                else alert(xobj.resultado);
+            }
+        }
+    }
+
+    function analizaResultado(xobj) {
+        xobj.tipoResultado = typeof xobj.responseText === "string" ?
+            xobj.responseText.startsWith("&lt;!") ?
+                "página" : "respuesta" :
+                "objeto";
+
+        xobj.resultado = xobj.tipoResultado === "respuesta" ?
+            JSON.parse(xobj.responseText) :
+            xobj.responseText;
+
+        if (huboError(xobj)) xobj.tipoResultado = "error" 
+    }
+
+    function msjError(xobj) {
+        return (xobj.resultado &amp;&amp; xobj.resultado.fallo) ?
+            (xobj.resultado.msj instanceof Array ? xobj.resultado.msj.join("\n") : xobj.resultado.msj) :
+            `${xobj.accion}\n${xobj.url}\n¡E R R O R!!!\nStatus: ${xobj.status} (${xobj.statusText})\n${xobj.status}`;
+    }
+
+    function huboError(xobj) {
+        return ((xobj.status == 0) || (xobj.status >= 400)) || (xobj.resultado &amp;&amp; xobj.resultado.fallo);
+    }
+
+	function objError(xobj) {
+        return (xobj.resultado &amp;&amp; xobj.resultado.fallo) ?
+		    xobj.resultado :
+            { 
+                fallo: true, 
+                msj: xobj.statusText || "No puedo comunicarme con la B.D.", 
+                status: (xobj.resultado &amp;&amp; xobj.resultado.status) || xobj.status
+            }
+	}
+
+    function mstError(e) {
+        retorno({tipoResultado: "error", ...e.target});
+    }
+
+    function hayQueIdentificar(xobj) {
+        return [400,401,491,492].includes(xobj.status);        
+    }
+
+    xobj.accion = accion;
+    xobj.url    = url;
+
+    xobj.overrideMimeType("application/json");
+    xobj.withCredentials = true;
+    xobj.open(accion, url, true);
+    xobj.setRequestHeader('Access-Control-Allow-Origin',inception);
+    xobj.setRequestHeader('Content-type','application/json; charset=utf-8');
+    /*debugger*/
+    let token = localStorage.getItem(API);
+    if(token) xobj.setRequestHeader("autoriza",token);
+    xobj.onerror = mstError;
+    xobj.onreadystatechange = () => console.log(`${xobj.readyState} ${url}, ${xmlEstado[xobj.readyState]} (${xobj.status})`);
+    xobj.onload = () => {
+        analizaResultado(xobj);
+
+        identifica(xobj);
+
+        retorno(xobj);
+	};
+    xobj.send(JSON.stringify(datos));
+}
+
+function identifica(obj) {
+    //lmpErrores();
+    let hdr = obj.getResponseHeader("identifica");
+    if(hdr) localStorage.setItem(obj.getResponseHeader("API"),hdr)
+}
+
+function regVacio(Stru) {
+	let retorno = {};
+	for(let x in Stru) {
+		retorno[x] = valPorOmision(Stru[x]);
+	}
+	return retorno;
+}
+
+function mstModal(dom) {
+    objDom(dom).classList.add("activa");
+    rogAsigna(".rogCierraModal","onclick",cierraModal);
+}
+
+function rogAncetre(dom,selectorPa) {
+    /*
+        Devuelve el elemento superior de @param dom
+        que coincida con @param selectorPa
+        Si no existe, devuelve el elemento "body"
+    */
+    let pa = objDom(dom);
+    while (!((pa.matches(selectorPa)) || pa.matches("BODY"))) { pa = pa.parentElement}
+    return pa;
+}
+
+function cierraModal(e) {
+    let vnt = rogAncetre(e.target,"rogModal")
+    
+    if(vnt.tiempo) clearTimeout(vnt.tiempo);
+    
+    vnt.classList.remove("activa");
+}
+
+function domImg(src,caption,imgProps,figProps) {    
+    return retorno = domTxt(
+        `&lt;img src='Imagenes/" +src +(Extension(src) ? "" : ".jpg");
+        ${creaOpcs(imgProps)}>` +
+        domTxt(caption,"figcaption"),
+        "figure","",figProps);
+}
+
+function creaCmb(datos,dom,item) {
+    // Crea el dom de un combo cargado con @param datos en el @param dom
+    // Si se omite @param dom se devuelve el codigo HTML correspondiente
+    // @param item puede ser:
+    // 1. el nombre de un elemento en datos
+    // 2. un Objeto { valor: texto } o {valor: nb del valor, texto: nb del texto} con el nombre de los elementos a usar
+    // 3. Si se omite, es el valor del elemento en datos
+
+    let valor = (x,i) => i;
+    let texto = x => x;
+    if(item) {
+        if(typeof item === "string") {
+            valor = x => x[item];
+            texto = x => x[item];
+        } else {
+            valor = (x,i) => x[item.valor] || i;
+            texto = x => x[item.texto]; 
+        }
+    }
+    
+    let _combo = datos.reduce((combo,x,i)=> combo +="&lt;option value='"+valor(x,i)+"'>"+texto(x)+"&lt;/option>","&lt;select>")+"&lt;/select>";
+    if(dom) {
+        let _dom = objDom(dom);
+        _dom.innerHTML = _combo;
+    } else return _combo;
+}
+
+function creaOpcion(item) {
+	var opcion = document.createElement("OPTION");
+
+	if (typeof item === "string") {
+		opcion.value = item;
+		opcion.appendChild(document.createTextNode(item));
+	} else {
+		opcion.value = item.valor;
+		opcion.appendChild(document.createTextNode(item.texto));
+	}
+	return opcion;
+}
+
+// Manejo de Errores
+
+function rogError(msj,campo) {
+    return { fallo: true, msj, campo };
+}
+
+function campoError(campo) {
+    return typeof campo === "string" ? 
+        document.querySelector("[name=" +campo +"]") : 
+        campo;
+}
+
+function campoMsjError(campo){
+    return typeof campo === "string" ? 
+        document.querySelector(".error[for=" +campo +"]") : 
+        campo;
+}
+
+function lmpErrores() {
+    document.querySelectorAll(".error").forEach(x => x.innerHTML = "");
+}
+
+function rogFallo(msj) {
+    let campo;
+    
+    function mstMsj(msj) {
+        if (typeof msj === "string") alert(msj || "¡No tengo conexión con la Base de Datos!");
+        else {
+            mstMsj(msj.msj);
+            if(msj.campo) {
+                //campoError(msj.campo).setCustomValidity( msj.msj);
+                campoMsjError(msj.campo).innerHTML = msj.msj;
+            }
+        }
+    }
+    
+    if(msj.msjs) {
+        msj.msjs.forEach(mstMsj);
+        campo = campoError(msj.msjs[0].campo);
+    } else {
+        mstMsj(msj);
+        campo = campoError(msj.campo);
+    };
+
+    if(campo) rogFocaliza(campo);
+}
+
+function rogFocaliza(elemento) {
+    elemento.focus();
+    elemento.select();    
+}
+
+function limpiaTextAreas(frm) {
+    Array.from(frm.querySelectorAll("textarea")).forEach(x => x.value = x.value.trim());
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a> on Tue Oct 25 2022 13:56:36 GMT-0400 (hora de Venezuela)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

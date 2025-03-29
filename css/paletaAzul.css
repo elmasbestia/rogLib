@@ -1,26 +1,22 @@
 /* Paleta de Colores Azules */
 
 :root {
-	--clrEnfasis:   rgb(164, 164, 164, 0.5);
+	--clrEnfasis:   rgba(240, 135, 15, 0.911);
 	--clrNav:       rgb(40, 164, 164);
-	--clrFondo:     rgb(164, 164, 164, 0.5);
-	--clrTxt:       black;
 	--cltTxtEnh:    silver;
 	--clrTxtChx:    white;
-	--clrFndChx:    grey;
+	--clrFndChx:    transparent;
 	--clrFotoMarco: white;
-	--clrFndUL:     #aa99e4ff;
-	--clrFndLI:     #f9f9f9;
-	--clrTxtLI:     black;
-    --clrFndBtn:    #0047b3;
-    --clrTxtBtn:    white;
-    --objFondo:     #0047b3;
-    --objLetra:     white;
+	--clrFndLI:     #a2d2ff;
+	--clrTxtLI:     grey;
+    --clrFndObj:    #0047b3;
+    --clrTxtTxt:    white;
+    --clrFnd:       #0096c7;
+    --clrtxt:       white;
 }
 
 ul, ol {
-	background-color: var(--clrFndUL);
-}
+	background: radial-gradient(circle, var(--clrFndLI) 0%, var(--clrFnd) 75%, rgba(255,255,255,.6) 100%);}
 
 li {
 	background-color: var(--clrFndLI);

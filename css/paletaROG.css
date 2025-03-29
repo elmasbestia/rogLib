@@ -1,0 +1,33 @@
+/* Paleta de Colores Cuchi */
+
+:root {
+	--clroscuro: 20 51% 23%;
+	--clrclaro:  28 78% 68%;
+	--clrmedio:  28 68% 52%;
+
+	--clrFnd:     	hsl(var(--clroscuro));
+	--clrTxt:       hsl(var(--clrclaro));
+
+	--cltTxtEnh:    #628395;
+	--clrTxtChx:    white;
+	--clrFndChx:    transparent;
+	--clrFotoMarco: white;
+	--clrFndUL:     #824936;
+	--clrFndObj:    hsl(var(--clroscuro) / .75);
+	--clrTxtObj:    white;	
+}
+
+body {
+	background-image: linear-gradient(to bottom right, hsl(var(--clroscuro)), hsl(var(--clrclaro)));	
+	color: var(--clrTxt);
+}
+
+ul, ol {
+	background-color: var(--clrFndUL);
+	padding: .2em;
+}
+
+li:hover {
+	background-color: var(--clrFndChx);
+	color: var(--clrTxtChx);
+}

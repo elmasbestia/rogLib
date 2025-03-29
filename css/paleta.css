@@ -2,14 +2,29 @@
 
 :root {
   --clrEnfasis: #a19e9b;
-  --clrFnd: #fff;
-  --clrTxt: 0c0c0c;
+  --clrFnd: #023E8A;
+  --clrTxt: #c0c0c0;
   --cltTxtEnh: orange;
-  --clrTxtChx: white;
+  --clrTxtChx: black;
   --clrFndChx: transparent;
   --clrFotoMarco: white;
-  --clrFndUL: #a5aab1;
-  --clrTxtUL: #0b6ca0;
-  --clrFndObj: #0047b3;
+  --clrFndUL: #dedede;
+  --clrTxtUL: #0096c7;
+  --clrFndObj: #03045E;
   --clrTxtObj: white;
+}
+
+body {
+	background-color: var(--clrFnd);	
+	color: var(--clrTxt);
+}
+
+ul, ol {
+	background-color: var(--clrFndUL);
+	padding: .2em;
+}
+
+li:hover {
+	background-color: var(--clrFndChx);
+	color: var(--clrTxtChx);
 }

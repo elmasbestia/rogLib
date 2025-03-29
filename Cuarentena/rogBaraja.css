@@ -1,0 +1,123 @@
+:root {
+	--clrOscuro: 20 51% 23%;
+	--clrClaro:  28 68% 52%;
+}
+
+body {
+  box-sizing: content-box;
+}
+
+.modelo {
+  display: flex;
+  justify-content: space-around;
+}
+
+.mantel {
+  width: 80%;
+  min-height: 80%;
+
+  padding: 2rem;
+
+  background: green;
+
+  perspective: 1000px;
+}
+
+h2 {
+  font-family: Century, serif;
+  font-size: 36px;
+}
+
+.baraja {
+  font-family: Century, serif;
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 9em;
+  height: 12em;
+  border-radius: 10px;
+  transform-style: preserve-3d;
+  transition: all 0.8s ease;
+}
+
+.baraja .contenido {
+  position: absolute;
+  top: 100%;
+  background-color: rgba(256, 256, 256, 0.3);
+  z-index: 100;
+  transition: top 0.8s ease;
+}
+
+.baraja.volteada:hover .contenido {
+  top: 20%;
+}
+
+.baraja.marcada,
+.baraja.volteada {
+  transform: rotateY(180deg);
+}
+
+.elLomo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  backface-visibility: hidden;
+  overflow: hidden;
+  background-color: hsl(var(--clrClaro));
+  color: hsl(var(--clrOscuro));
+  background-image: url(https://rafagomez.neocities.org/Imagenes/rogLogo.svg);
+  background-size: cover;
+  background-position: center;
+  /*   url(https://rafagomez.neocities.org/Imagenes/rogLogo.svg);
+      */
+}
+
+.laCara {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  border: 1px solid black;
+  backface-visibility: hidden;
+  overflow: hidden;
+  background: #fafafa;
+  text-align: center;
+  transform: rotateY(180deg);
+}
+
+.laCara .foto {
+  position: absolute;
+  top: 15%;
+  left: 5%;
+  height: 70%;
+  width: 90%;
+  z-index: 0;
+}
+
+.laCara .foto img {
+  width: 100%;
+  height: 100%;
+}
+
+.si {
+  position: absolute;
+  left: 6px;
+  top: 2px;
+}
+.id {
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  rotate: -180deg;
+}
+
+.palo {
+  color: var(--clrPalo);
+  z-index: 10;
+  font-size: 2em;
+}

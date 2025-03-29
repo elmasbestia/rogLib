@@ -20,6 +20,11 @@ class Libro {
         return this.wb.Sheets
     }
 
+
+    get lstNbHojas() {
+        return this.wb.SheetNames;
+    }
+
     get proximaHoja() {
         const prox = this.proxHoja.next();
 
@@ -32,25 +37,6 @@ class Libro {
 
     guarda() {
 	   XL.writeFile(this.wb,this.wb.FILENAME);
-	   /*
-Exporting Workbook for Download
-We need to export the workbook as xlsx binary. Use write function then pass the bookType as xlsx and output Type as binary
-
-var wbout = XLSX.write(wb, {bookType:'xlsx',  type: 'binary'});
-We now have our xlsx binary data on wbout var. However, the correct content type for excel file is octet stream so you’ll need to convert the binary data into octet. We can achieve that by using arrayBuffer, UInt8Array and bit operation like this.
-
-function s2ab(s) { 
-                var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
-                var view = new Uint8Array(buf);  //create uint8array as viewer
-                for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
-                return buf;    
-}
-We’re going to utilize Filesaver.js and Blob to handle the file saving for cross browser support. Use saveAs() function and create a new Blob object from octet array. Set the content type as octet-stream. follow by excel file naming that you would like.
-
-$("#button-a").click(function(){
-       saveAs(new Blob([s2ab(wbout)],{type:"application/octet-stream"}), 'test.xlsx');
-});
-    */
     }
 }
 
@@ -223,18 +209,6 @@ function abreXL(nbArch,dir="") {
     return XL.readFile(dir +nbArch +(_ext ? "" : ".xls"));
 }
 
-function creaXL(nbArch) {
-    var wb = XLSX.utils.book_new();
-	wb.Props = {
-                Title: "SheetJS Tutorial",
-                Subject: "Test",
-                Author: "Red Stapler",
-                CreatedDate: new Date()
-        };
-    wb.SheetNames.push("Hoja1");
-    return wb;
-}
-
 function dirCelda(col,fila) {
     if(fila === undefined) return col;
     return letraCol(col)+fila;
@@ -360,7 +334,7 @@ function recorreHoja(hoja,fn = x => x) {
     return _filas.map(fn);
 }
 
-function ciclo(dir,fn) {
+function ciclo(dir, fn, cb) {
     const fs = require("fs");
     const path = require("path");
 
@@ -375,10 +349,12 @@ function ciclo(dir,fn) {
                 console.log("** : ", nbHoja);
                 if(nbHoja === "INSTRUCTIVO") console.log("==> nvpb!")
                 else {
-                    fn(lib.sheet_to_row_object_array(wb.Sheets[nbHoja]));
+                    fn(lib.sheet_to_json(wb.Sheets[nbHoja]));
                 }
             });
         });
+
+        cb();
       }
     });
 }
@@ -474,11 +450,16 @@ exports.guarda = guarda;
 exports.lib = lib;
 exports.ciclo = ciclo;
 
-function guarda(htmlTabla,tit,type = 'xlsx') {
+function guarda(datos,nbWb) {
+    let wb = XL.book_new();
+
 	XL.writeFile(this.wb,this.wb.FILENAME);
 
-    var wb = XLSX.utils.table_to_book(htmlTabla, {sheet:tit});
-	return XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'});
+    (Array.isArray(datos) ? datos : [datos]).forEach((x, i) => {
+        XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(x))
+    })
+
+	XL.writeFile(wb, nbWb, {compression: true});
 }
 
 function _libro() {

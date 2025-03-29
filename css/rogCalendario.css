@@ -5,10 +5,30 @@
     rafagomez.neocities.org
 */
 
+.calMes {
+    background-color: var(--clrFndObj);
+    color: var(--clrTxtObj);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+    padding: 1.25em;
+}
     .calNbMes { /* Nombre del mes e indicadores de Próximo y Siguiente mes */
-        font-size: 300%;
         text-align: center;
-        }
+    }
+
+    .calTitSem {
+        display: flex;
+        justify-content: space-evenly;
+        font-size: .75em;
+    }
+
+    .calTitSem .chxTit {
+        text-transform: uppercase;
+        padding: 2px;
+        border: 1px solid currentColor;
+    }
+
     .calMesAnt { /* Indicador de Mes Anterior */
         font-size: .6em
 	}
@@ -21,37 +41,74 @@
     .calMesSig:hover {
         cursor: e-resize;
 	}
-    .calSem { display: flex } /* Contenedor de cada Semana */
 
-    .calDia { /* Celda que muestra cada día */
-        width: 28%;
-        margin: 3px;
-        padding: 3px;
-        font-size: 3em;
-        text-align: center;
-        flex: 1;
-        border-radius: 25px;
-        background-color: lightsteelblue;
-        color: white;
-     }
-
-     .calDia:hover {
-        color: ivory;
-        background-color: skyblue;
+    .calSem {  /* Contenedor de cada Semana */ 
+        display: flex;
+        height: 7vh;
+        min-width: 45vw;
+        gap: 2px;
     }
 
-    .calNoMes { /* Días que no pertenecen al Mes Actual */
-         background-color: darkgrey;
-         border-radius: 25px;
+    .calDias {
+        display: grid;
+        grid-template-columns: repeat(7,1fr);
+    }
+
+    .celDia {
+        flex-basis: 100%;
+    }
+
+    .calDia { /* Celda que muestra cada día */
+        position: relative;
+
+        font-size: 1.7em;
+        font-weight: 300;
+
+        border-radius: 5px;
+        background-color: var(--clrFndLI);
+        color: var(--clrTxtLI);
+    }
+
+    .calDia.Hoy {
+        background-color: var(--clrTxtEnh);
+    }
+
+    .calDia::before {
+        position: absolute;
+        content: attr(data-txt);
+
+        bottom: 5px;
+        right: 5px;
+        
+        font-size: .6rem;
+        text-align: right;
+    }
+
+    .calDia:hover {
+        background-color: var(--clrFndChx);
+        color: var(--clrTxtChx);
     }
 
     .noLaboral { /* Feriados y Fines de Semana */
         background-color: white;
         color: red;
-        border: 1px solid red;
-        }
+        border: 2px solid red;
+    }
 
-        #Calendario { /* Contenedor del Calendario */
-        background-color: cadetblue;
+    #Calendario { /* Contenedor del Calendario */
+        background-color: darkcyan;
         color: white;
-        }
+    }
+
+#frmLapso {
+    display: none;
+    text-align: center;
+}
+
+#frmLapso.activa {
+    display: block;
+}
+
+#frmLapso nav {
+    justify-content: space-around;
+}

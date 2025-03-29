@@ -1,4 +1,29 @@
 
+class rogCrgs {
+  /*
+    Crea los objetos de carga de archivo de una forma
+  */
+
+    constructor(lista,directorio,url){
+      this.w = {};
+
+      this.lista = lista;
+      this.directorio = directorio;
+      this.url = url;
+    }
+
+    get lista () {
+      return this.w.lista;
+    }
+
+    set lista(valor) {
+      if(valor) this.w.lista = valor;
+      else this.w.lista = Array.from(document.forms[0].querySelectorAll("[type=file]"));
+
+      this.w.nbArchs = this.lista.map(x => new rogCrg(x))
+    }
+}
+
 class rogCrg {
     constructor(nbArch, marco) {
       debugger;
@@ -8,7 +33,7 @@ class rogCrg {
       this.nb = nb;
       this.valor = valor;
   
-      this.marco = objDom(marco);
+      this.marco = marco;
     }
   
     set nb(valor) {
@@ -17,6 +42,10 @@ class rogCrg {
   
     get nb() {
       return this.w.nb;
+    }
+
+    set marco(valor) {
+      objDom(marco)
     }
   
     get tipo() {

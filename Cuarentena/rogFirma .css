@@ -1,0 +1,52 @@
+.rogFirma {
+	background-color: transparent;
+}
+
+.rogFirma-enlaces {
+  background-color: #004d66;
+  background-repeat: no-repeat;
+  color: silver;
+  text-shadow: .1rem .1rem black;
+  position: fixed;
+}
+
+.rogFirma-enlace {
+  border: 2px solid currentcolor;
+  border-radius: 25px;
+
+  color: silver;
+  font-size: 1.5rem;
+  display: block;
+  padding : 15px;
+  margin: auto auto;
+
+  -webkit-transform: rotateZ(45deg);
+          transform: rotateZ(45deg);
+}
+
+.rogFirma-enlace a {
+  color: currentcolor;
+}
+
+.rogFirma:hover .rogFirma-enlaces {
+    display: block;
+  
+    bottom:   100px;
+    right:     10px;
+  }
+  
+  .rogFirma:hover .rogFirma-enlaces .rogFirma-enlace {
+    transition: all 2s ease-in;
+  
+    -webkit-transform: rotateZ(0deg);
+            transform: rotateZ(0deg);
+  }
+  
+  .rogCapa2 {
+    transition-delay: .5s;
+  }
+  
+  .rogCapa3 {
+    transition-delay: 1s;
+  }
+  

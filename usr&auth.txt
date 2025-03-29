@@ -1,0 +1,16 @@
+Manejo de Usuarios:
+
+1. JWT
+	
+2. USUARIO/HISTORIA
+2.1 Registro de USUARIOS
+2.2 Info de usuario:
+2.2 HISTORIA
+2.2.1 Registrar las acciones requeridas por el Usr
+
+3. AUTENTICAR:
+1.1 Buscar última interacción del usuario.
+1.2 Dependiendo del tiempo volver a identificar
+1.3 
+
+4. PERMISOLOGÍA

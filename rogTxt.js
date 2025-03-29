@@ -1,173 +1,166 @@
 "use strict";
-// Objeto para búsqueda de Textos
-// Permite buscar en un arreglo de textos una cadena en particular.
-// Se crea la lista de elementos del arreglo que contienen la cadena
-// Esta lista muestar la línea donde aparece la cadena
-// Se muestra el texto completo al escoger
-// Uso:
-//     var x = new rogTxt(
-//     @param nbBsqDom  Elemento que contiene la cadena a buscar (Normalmente un <input>), //
-//     @param nbVntTxt  Nombre del elemento donde se mostrarán los resultados de la búsqueda
-//     (Ambos pueden ser el id o la referencia al propio elemento DOM),
-//     @param txts      Arreglo de textos,
-//     @param fn        Funciones, puede ser una sola o un arreglo:
-//                      La primera es la que permite extraer el texto del elemento del arreglo (Si el elemento es un objeto, por ejemplo) (fnSaca)
-//                      La segunda se ejecuta al mostrar el texto (fnMst)
-//      );
-// Para efectos de CSS se pueden usar las clases:
-//     rogTxtLista      Contenedor de la lista (<div>)
-//     rogLiTxt         Líneas que contienen la cadena  (<li>)
-//     rogTxt           Contenedor del Texto (<div>)
-//     rogCantTxt       Cantidad de elementos de la lista
+/*
+ Objeto para búsqueda de Textos
+    Permite buscar en un arreglo con textos una cadena en particular.
+    Se crea la lista de elementos del arreglo que contienen la cadena
+    Esta lista muestar la línea donde aparece la cadena
+    Se muestra el texto completo al escoger
 
-function rogTxt(nbBsqDom, nbVntTxt, txts, fn) {
-    var cadena;
-    var fifan = [], todas = false;
-    var dom, vntTxt, txtLista, txtDom;
-    var fnSaca, fnMst;
-    
-    function mstTxt() {
-        txtDom.innerHTML = this.txt;
-        if (fnMst) fnMst(this);
-    }
-    
-    function getTxt() { return this.txt; }
-    
-    function quitaEsp(txt) {
-      var retorno = "";
-      var car = "", xcar = 0, ncar = txt.length, brinca = false;
-      
-      for(xcar = 0; xcar < ncar; ++xcar) {
-        car = txt.charAt(xcar);
-        if (brinca) { brinca =  car != ">" }
-        else {
-            if (car === "<") { brinca = true }
-            else {
-              if (car === "\\") { xcar++ }
-              else {
-                retorno += car;
-              }
-            }
-        }
-      }
-      return retorno;
+    Opciones:
+        dom     Elemento a contener el objeto,    
+        vnt     (Opcional) Al hacer click en uno de los resultados, el contenido se mostrará en este elemento
+        datos   Arreglo con los textos
+        extrae  Opcional: función permite extraer el texto del elemento del arreglo
+        muestra  Opcional: función que se ejecuta al darle "click" a uno de los resultados
+        campos  Lista de las propiedades del arreglo susceptibles de búsqueda
+    Clases:
+        rogLstTxt      Contenedor de la lista de resultados (<ul>)
+        rogLiTxt         Resultados  (<li>)
+        rogTxt           Contenedor del Objeto (<details>)
+        rogCantTxt       Cantidad de elementos de la lista (<span.badge>)
+*/
+
+class rogTxt {
+    constructor (opcs) {
+        this.w = {
+            fifan: []
+        };
+
+        this.dom    = opcs.dom;
+        this.datos  = opcs.datos;
+        this.campos = opcs.campos;
+        this.vnt    = opcs.vnt;
+        this.extrae = opcs.extrae;
+        this.muestra = opcs.muestra;
+
+        this.fn     = creaFn(this.campos,this.extrae)
+        this.mstLi  = creaMstLi(this.campos,this.extrae)
     }
 
-    function getLinea() { return quitaEsp(this.txt.slice(this.debut,this.fin)) }
-
-    function cambio() {
-        busca();
-        vntTxt.style.display = cadena ? "flex" : "none";
-        mstlista();
-    }
-    
-    function mstlista() {
-        if (fifan.length) {
-            txtLista.innerHTML = "";
-            let cont = document.createElement("P");
-            cont.innerHTML = "<span class='rogCantTxt'>" + fifan.length + "</span> resultados encontrados";
-            txtLista.appendChild(cont);
-            var lista = document.createElement("OL");
-            txtLista.appendChild(lista);
-            
-            fifan.forEach(x => {
-                let li = document.createElement("LI");
-                li.className = "rogLiTxt";
-                li.appendChild(document.createTextNode(x.x +" " +x.linea()));
-                li.txt = x.txt;
-                li.onclick = mstTxt;
-
-                lista.appendChild(li);
-            });
-        } else {
-            txtLista.innerHTML = "<p>No encontré ningún texto que contenga '"+cadena+"'</p>";
-        }
-    }
-    
-    function limpiaTxt(txt) {
-        var retorno = txt.toLowerCase();
-        // caracteres a "limpiar"
-        var especiales = [/á/g, /é/g, /í/g, /ó/g, /ú/g, /ü/g], vocales = "aeiouu";
-        
-        if (retorno) {
-            especiales.forEach((x,i) => {
-                retorno = retorno.replace(x,vocales.charAt(x));
-            });
-        }
-        return retorno;
-    }
-    
-    function sacaTxt(elemento, fn) {
-        return typeof elemento === "object" ? fn(elemento) : elemento;
+    get dom() {
+        return this.w.dom;
     }
 
-    function busca() {
-        cadena = bsq.value;
-        var txtABuscar = limpiaTxt(cadena);
-        fifan = [];
-        
-        function salto (txt, atras=false) {
-            let pos = 0, xSalto = 0, buscar = true;
-            let tSalto = ["<br","\l"];
-            do {
-                if (atras) {pos = txt.lastIndexOf(tSalto[xSalto])}
-                else {pos = txt.indexOf(tSalto[xSalto])}
-                xSalto++;
-                buscar = ((pos === -1) && (xSalto < tSalto.length));
-            } while (buscar);
-            return pos;
-        }
-       
-        if (txtABuscar) {
-            let x, txt, txtLimpio;
-            let pos, debut, fin;
-            for (x = 0; x < txts.length; ++x) {
-                txt = sacaTxt(txts[x], fnSaca);
-                txtLimpio = limpiaTxt(txt);
-                pos = txtLimpio.indexOf(txtABuscar);
-                if (pos > -1) { // Contiene el texto
-                    debut = salto(txtLimpio.slice(0,pos),true);
-                    if (debut === -1) { debut = 0 }
-                    fin = salto(txtLimpio.slice(pos));
-                    fin = fin > -1 ? pos +fin : txtLimpio.length;
+    set dom(dom) {
+        this.w.dom = objDom(dom);
+        this.w.dom.innerHTML = tmpTxt();
 
-                    fifan.push({ x: x, txt: txt, debut: debut, fin: fin, linea: getLinea, getTxt: getTxt });
-                }
-            }
-        } else {
-            if (todas) {
-            }
-        }
+        this.w.txtBsq = this.dom.querySelector("INPUT");
+        this.w.txtBsq.oninput = this.mst.bind(this);
+
+        this.w.cant      = this.dom.querySelector(".rogCantTxt");
+
+        this.w.lista     = this.dom.querySelector("OL");
+        this.w.elementos = this.w.lista.getElementsByTagName("LI");
     }
-    
-    function creaAreas() {
-        if (typeof nbVntTxt === "string") {
-            vntTxt = document.getElementById(nbVntTxt);
-        } else {
-            vntTxt = nbVntTxt;
-        }
-        
-        txtLista = document.createElement("DIV");
-            txtLista.classname = "rogTxtLista";
-        vntTxt.appendChild(txtLista);
-        txtDom = document.createElement("DIV");
-            txtLista.className = "rogTxt";
-        vntTxt.appendChild(txtDom);
+
+    set datos(valor) {
+        this.w.datos = valor;
     }
-    
-    this.Datos = txts;
-    this.setTodas  = valor => todas = valor;
-    this.getCadena = () => cadena;
-    this.setcadena = valor => cadena = valor;
-    
-    dom = typeof nbBsqDom === "string" ? document.getElementById(nbBsqDom) : nbBsqDom;
-    dom.addEventListener("input",cambio);
-    creaAreas();
-    if (fn) {
-        if (typeof fn === "function") { fnSaca = fn}
-        else {
-            if (fn[0]) { fnSaca = fn[0]}
-            if (fn[1]) { fnMst = fn[1]}
-        }
+
+    get datos() {
+        return this.w.datos;
+    }
+
+    set campos(valor) {
+        this.w.campos = desarma(valor);
+    }
+
+    get campos() {
+        return this.w.campos;
+    }
+
+    set vnt(dom) {
+        this.w.vnt = objDom(dom);
+    }
+
+    get vnt() {
+        return this.w.vnt;
+    }
+
+    get lista() {
+        return this.w.elementos;
+    }
+
+    get cadena() {
+        return this.w.txtBsq.value;
+    }
+
+    set cadena(valor) {
+        this.w.txtBsq.value = valor;
+        this.mst()
+    }
+
+    get exp() {
+        return new RegExp(limpiaPlb(this.cadena), "i")
+    }
+
+    set cant(valor) {
+        this.w.cant.innerHTML= valor;
+    }
+
+    mst() {
+        this.w.fifan = bsqTxt(this.exp,this.datos,this.fn);
+
+        this.cant = this.w.fifan.length;
+        this.w.lista.innerHTML = this.w.fifan.map((x,i) =>
+            domTxt(this.mstLi(x,i),"LI","rogLiTxt")
+        ).join("");
+
+        rogAsigna(this.lista,"onclick",this.chxLi.bind(this));
+    }
+
+    chxLi(event) {
+        const indice = event.currentTarget.i;
+
+        if (this.vnt) this.vnt.innerHTML = this.mstLi(this.datos[indice],indice);
+        if (this.muestra) this.muestra(this.datos[indice],indice);
     }
 }
+
+function tmpTxt() {
+    return `<details class="rogTxt">
+        <summary>
+            <input type="text">
+            <span class="icono"><i class="fas fa-search"></i></span>        
+            <span class="rogCantTxt badge"></span>
+        </summary>
+        <ol class="rogLstTxt"></ol>
+    </details>`
+}
+
+function creaFn(campos,extrae) {
+    /* 
+        Crea la funcion que evalúa la búsqueda según:
+        1. Si se definió campos, se evalua contra cada campo
+        2. Si se definió la función "extrae" se usa esta
+        3. Sino: se 
+    */
+    if(campos) {
+        return (x,exp) => o(
+            campos.map((e) => x[e]),
+            exp
+        )
+    } else if(extrae) {
+        return (x,exp) => exp.test(limpiaPlb(def(extrae(x))));
+    } else {
+        return (x,esp) => exp.test(limpiaPlb(def(x[que])))
+    }
+}
+
+function creaMstLi(campos,extrae) {
+    return (x,i) => {
+        return i;
+    }
+}
+
+function bsqTxt(exp,a,fn) {
+    const f = x => fn(x,exp)
+    return a.filter(f)
+}
+
+function o(a, exp) {
+    // Evalua varios valores contra una misma expresión 
+    return a.reduce((si, x) => (si = si || exp.test(limpiaPlb(x))), false);
+}
+

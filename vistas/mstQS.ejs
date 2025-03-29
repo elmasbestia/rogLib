@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%- include('./encabezado',{modulos: ["Bsq","Vnt","Tab","CSS"]}); %>
+    <script src="/lib/PDO/xlsx.full.min.js"></script>
+    <script src="/lib/componentes/rogPai_c.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Estadísticas</title>
+
+    <style>
+        .colCant {
+            text-align: right;
+            padding-right: 10%;
+            cursor: pointer;
+        }
+        .colPai {
+            text-align: center;
+        }
+    </style>
+    <script>
+        const API = "QS";
+        let cant = 0;
+
+        function extraeNbCol(col) {
+            let reg = /col_\w+\b/i;
+            let clase = reg.exec(typeof col === "string" ? col : col.classList)[0];
+            return clase.slice(4);
+        }
+
+        function mstValor(e) {
+            let campo = extraeNbCol(e.currentTarget);
+            let valor = e.currentTarget.dataset.valor || e.currentTarget.textContent;
+
+            accede("GET",`/valor?${campo}=${valor}`, datos=> {
+                if(datos.fallo) alert(datos.msj); 
+                else {
+                    new rogVntTab({
+                        titulo: campo,
+                        chacumbele: true
+                    },{
+                        titulo: valor,
+                        datos
+                    });
+                }
+            });
+        }
+
+        function mstValores(e) {
+            let tr = e.currentTarget.closest("TR");
+            let campo = tr.dataset.campo;
+            accede("GET","/valores/"+campo, datos=> {
+                if(!datos.fallo) {
+                    const valores = []
+                    for(valor in datos.valores) {
+                        let reg = {
+                            cant: datos.valores[valor],
+                            "%": datos.valores[valor] / cant
+                        }
+                        reg[campo] = valor;
+                        
+                        valores.push(reg);
+                    };
+
+                    new rogVntTab({
+                        titulo: campo,
+                        chacumbele: true
+                    },{
+                        titulo: campo,
+                        datos: valores,
+                        Fn: jeto(campo, "mstValor")
+                    });
+                }
+            })
+        }
+
+        function anal(e) {
+            let tr = e.currentTarget.closest("TR");
+            let campo = tr.dataset.campo;
+            accede("GET","/valores/"+campo, datos=> {
+                const inicia = Object.values(datos.valores)[0]
+                const fn = isNaN(inicia) ?
+                    valor => {
+                        if(valor < valores.min) valores.min = valor;
+                        else if(valor > valores.max) valores.max = valor;
+                    } : 
+                    valor => {
+                        valores.total += valor * datos.valores[valor]
+                        if(valor < valores.min) valores.min = valor;
+                        else if(valor > valores.max) valores.max = valor;
+                    }
+
+                
+                const valores = {
+                    min: inicia,
+                    max: inicia,
+                    total: 0,
+                    promedio: 0
+                }
+                    
+                for(valor in datos.valores) { fn(valor) };
+                valores.promedio = valores.total / cant
+
+                new rogVntTab({
+                    titulo: campo,
+                    chacumbele: true
+                },{
+                    titulo: campo,
+                    datos: Object.entries(valores).map(([que,valor]) => ({que, valor})),
+                });
+            });
+        }
+
+        function debut() {
+            cant = <%= cant %>;
+        }
+    </script>
+</head>
+
+<body onload="debut()">
+    <div class="card">
+    <header>
+        <h1><%= titulo %><span class="badge"><%= cant %></span></h1>
+    </header>
+    <main>
+        <table>
+            <tr>
+                <th>Columna</th>
+                <th>Vacíos</th>
+                <th>Valores</th>
+                <th>Analiza</th>
+            </tr>
+            <% for( campo in QS ) { %>
+                <tr data-campo="<%= campo %>">
+                    <td class="colCampo"><%= campo %></td>
+                    <td class="colPai">
+                        <rog-pai label="<%= campo %>" value='{"vacios": "<%= QS[campo].vacios %>", "valores": "<%= cant -QS[campo].vacios %>"}'></rog-pai>
+                    </td>
+                    <td class="colCant"
+                        onclick="mstValores(event)">
+                        <%= Object.keys(QS[campo].valores).length %>
+                    </td>
+                    <td class="colAnal" onclick="anal(event)">⚡</td>
+                </tr>
+            <% } %>
+        </table>
+    </main>
+    </div>
+<%- include('./footer',{}); %>
+</body>

@@ -4,7 +4,7 @@
     titulo
     dimensiones
     coordenadas
-    tipo: tabla, lista, objeto, libre
+    tipo: lista, objeto, libre
     contenido
     clase
     modal: booleano
@@ -14,19 +14,17 @@
     CLASES:
     rogVnt: DOM contenedor de la ventana
     rogVntTit: título de la ventana
-
-
  */
 class rogVnt {
   constructor(opcs) {
     this.h = {}; // Hasta que a FF le de la gana
     this.dom = tmpVnt();
-    this.titulo = opcs.titulo;
+    this.titulo = opcs.titulo || "";
     this.dimensiones = opcs.dimensiones;
     this.coordenadas = opcs.coordenadas;
 
     this.tipo = opcs.tipo;
-    this.contenido = opcs.contenido;
+    this.contenido = opcs?.contenido;
 
     this.clase = opcs.clase;
 
@@ -59,7 +57,6 @@ class rogVnt {
 
   get tipos() {
     return {
-      tabla: (valor) => mstTabla(...valor),
       lista: (valor) => domTxt(creaLista(valor), "UL"),
       objeto: (valor) => valor.innerHTML,
       libre: (valor) => valor
@@ -91,7 +88,7 @@ class rogVnt {
     return { width: this.dom.style.width, height: this.dom.style.height };
   }
 
-  set coordenadas(valor = { top: "10em", left: "10em" }) {
+  set coordenadas(valor = {top: `${scrollY +30}px`, left: "3em"}) {
     for (let que in valor) this.dom.style[que] = valor[que];
   }
 
@@ -102,6 +99,8 @@ class rogVnt {
   set visible(valor) {
     this.h.visible = Boolean(valor);
     this.h.domModal.classList[this.visible ? "add" : "remove"]("activa");
+    if (this.boton) this.boton.dataset.estado = this.visible;
+    if (!this.visible && this.chacumbele) this.cierra();
   }
 
   get visible() {
@@ -133,12 +132,10 @@ class rogVnt {
 
   mst() {
     this.visible = !this.visible;
-    if (this.boton) this.boton.dataset.estado = this.visible;
-    if (!this.visible && this.chacumbele) this.cierra();
   }
 
   cierra() {
-    this.h.domModal.remove();
+    cierraVnt(this)
   }
 
   agrDom(visible) {
@@ -147,8 +144,8 @@ class rogVnt {
       this.h.domModal = document.createElement("DIV");
       this.h.domModal.className = "rogModal";
       this.h.domModal.appendChild(this.dom);
-    } else rogDonna(this.dom); //rogDonna(this.dom);
-    this.dom.querySelector(".cierraVnt").onclick = this.mst.bind(this);
+    } else rogDonna(this.dom);
+    this.dom.querySelector(".cierraVnt").onclick = this.cierra.bind(this);
     document.body.appendChild(this.h.domModal);
     this.visible = visible;
   }
@@ -163,18 +160,19 @@ class rogVnt {
 function tmpVnt() {
   return `<header>
       <h3 class="rogVntTit"></h3>
-      <span class="cierraVnt"><i class="fas fa-window-close"></i></span>
+      <span class="cierraVnt">✘</span>
     </header>
     <main>
     </main>`;
 }
 
 function cierraVnt(vnt) {
-  return (e) => {
-    if (vnt.tiempo) clearTimeout(vnt.tiempo);
+  if (vnt.tiempo) clearTimeout(vnt.tiempo);
 
-    vnt.visible = false;
-  };
+  if(vnt.chacumbele) {
+    vnt.h.domModal.remove();
+    vnt = null;
+  } else vnt.visible = false;
 }
 
 function creaLista(lista) {
@@ -229,12 +227,15 @@ function rogDonna(vnt) {
     vnt.style.left = vnt.offsetLeft - posx + "px";
 
     traza.push({
-      x: inicio.x,
-      y: inicio.y,
-      cliX: e.clientX,
-      cliY: e.clientY,
-      posx: posx,
-      posy: posy,
+		inicio,
+		client: {
+			x: e.clientX,
+			y: e.clientY,
+		},
+		pos: {
+			x: posx,
+			y: posy
+		},
       vntX: vnt.style.left,
       vntY: vnt.style.top
     });
@@ -247,13 +248,14 @@ function rogDonna(vnt) {
 }
 
 class rogVntEspera extends rogVnt {
-  constructor(props) {
+  constructor(props = {}) {
     super({
       titulo: props.titulo || `Espera`,
-      clase: "vntEspera",
+      clase: "rogVntEspera",
       contenido: `<div class='texto'>${
         props.texto || (typeof props === "string" ? props : "")
-      }</div><i class='fa fa-spinner fa-spin' style='font-size: 5rem'></i>`,
+      }</div>
+      <i class='fa fa-spinner fa-spin' style='font-size: 5rem'></i>`,
       modal: true,
       chacumbele: true,
       visible: true
@@ -262,11 +264,19 @@ class rogVntEspera extends rogVnt {
 }
 
 class rogVntTab extends rogVnt {
-  constructor(datVnt, datTab) {
-    datVnt.tabla = true;
-    super(datVnt);
+  constructor(Vnt, Tab) {
+    super(Vnt);
 
-    new rogTab(datTab.datos, this.vnt, datTab.titulo, datTab.campos);
+    if (Vnt.visible === undefined) this.visible = true;
+    this.tabla = new rogTab(Tab.datos, this.vnt, Tab.titulo, Tab.campos, Tab.Fn);
+  }
+
+  set datos(datos) {
+    this.tabla.datos = datos;
+  }
+
+  get datos() {
+    return this.tabla.datos;
   }
 }
 
@@ -274,7 +284,9 @@ class rogVntCuadro extends rogVnt {
   constructor(datVnt, datCuadro) {
     super(datVnt);
 
-    this.cuadro = new rogCuadro(datCuadro.grupos, datCuadro.datos, this.vnt);
+    if (datVnt.visible === undefined) this.visible = true;
+    datCuadro.dom = this.vnt;
+    this.cuadro = new rogCuadro(datCuadro);
   }
 }
 
@@ -282,7 +294,7 @@ class rogVntBlq extends rogVnt {
   constructor(vnt, blq) {
     super(vnt);
 
-    if (vnt.visible === undefined) vnt.visible = true;
+    if (vnt.visible === undefined) this.visible = true;
     this.blq = new rogBlq({ dom: this.vnt, ...blq });
 
     this.datos = this.blq.datos;
@@ -298,6 +310,20 @@ class rogVntFrm extends rogVnt {
 
     if (vnt.visible === undefined) this.visible = true;
 
-    this.frm = new rogForm(this.vnt, frm.stru, frm.opcs);
+    this.frm = new rogForm(this.vnt, frm.stru, this.opcsConEsc(frm.opcs));
+  }
+
+  opcsConEsc(frm = {}) {
+    let retorno = Object.assign(frm);
+
+    if(frm.opcs) {
+      if(!frm.opcs.escapa) retorno.opcs.escapa = this.escapa;
+    } else retorno.opcs = { escapa: this.escapa.bind(this)};
+
+    return retorno;
+  }
+
+  escapa(e) {
+    if(e.key === "Escape") this.mst();
   }
 }

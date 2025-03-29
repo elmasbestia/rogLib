@@ -36,6 +36,8 @@ exports.carga = (renombre) => function(req,res) {
     var forma = new require("formidable").IncomingForm();
 
     forma.parse(req, (err, fields, files) => {
+        console.log("Fields:")
+        console.table(fields)
         if(err) {
             console.log("¡ERROR!");
             console.dir({err, fields,files});

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= titulo %></title>
+
+    <link rel="stylesheet" href="/lib/css/paleta.css">
+    <link rel="stylesheet" href="/lib/css/rog.css">
+
+    <style>
+        main {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+    </style>
+
+    <script src="/lib/rogLib.js"></script>
+    <script src="/lib/componentes/rogFooter_c.js"></script>
+    <script src="/lib/componentes/rogTab_c.js" type="module"></script>
+    <script src="/lib/rogCampo.js"></script>
+    <script src="/lib/componentes/rogPai_c.js"></script>
+
+    <script>
+        const lapsos = {};
+        let lapso = "";
+        <%
+            datos.forEach(x => {
+                %>
+                lapso = "<%= x.lapso %>";
+                if(lapsos[lapso]) {
+                    lapsos[lapso]++;
+                } else {
+                    lapsos[lapso] = 1;
+                }
+                <%
+            });
+        %>
+
+
+        function debut() {
+            document.querySelector("#lstLapsos").innerHTML = Object.entries(lapsos).map(([lapso,cant]) =>
+            `<li class="liLapso"><span class="spLapso">${lapso}</span>: <span class="spCant">${cant}</span></li>`
+            ).join("")
+        }
+
+    </script>
+</head>
+<body onload="debut()">
+    <header>
+        <h1 onclick="leeDir(event)"><%= titulo %></h1>
+    </header>
+    <nav>
+        <rog-pai label="lapsos" onclick="chxSerie(event)"></rog-pai>
+    </nav>
+    <main>
+        <ol onclick="chxLapso(event)" id="lstLapsos"></ol>
+        <div>
+        <table id="urtimos">
+            <caption>Urtimos</caption>
+            <% 
+                datos.filter(x => x.dias < 10).forEach((x) => {
+                %>
+                <tr class="trArch"><td class="col_arch"><%= x.a %></td><td class="col_lapso"><%= x.lapso %></td></tr>
+                <%
+                });
+            %> 
+        </table>
+        </div>
+    </main>
+    <rog-tab></rog-tab>
+    <rog-footer></rog-footer>
+</body>
+<script>
+    // document.querySelector("rog-pai").value = lapsos
+
+    function chxSerie(e) {
+        mstTab(e.detail.serie)
+    }
+
+    function chxLapso(e) {
+        let lapso = e.target.closest(".spLapso")
+
+        if(lapso) mstTab(lapso.textContent)
+    }
+
+    function mstTab(lapso) {
+        accede("GET", `/lapso/${lapso}`, datos => {
+            const tab = document.querySelector("rog-tab")
+            tab.titulo = lapso
+            tab.datos = datos
+        })
+    }
+
+    function leeDir(e) {
+        const nbDir = prompt("Directorio a analizar?")
+        if(nbDir) accede("GET",`/dir?dir=${nbDir}`)
+    }
+</script>
+</html>

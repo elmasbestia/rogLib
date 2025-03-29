@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+	
     <title>Lista de Fonts</title>
 <style>
 	:root {
@@ -9,18 +10,44 @@
 		--clrTxt: #5a311d;
 	}
 
+	main {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2em;
+	}
+
 	.font {
 		border-bottom: 1px solid black;
+	}
+	
+	.badge {
+	  vertical-align: super;
+	  border-radius: 100%;
+	  font-size: 60%;
+	  padding: .3em;
+	  color: var(--clrFnd);
+	  background-color: var(--clrTxt);
+	  border: 1px solid var(--clrFnd);
 	}
 
 	.font div:hover {
 		color: var(--clrTxt);
 		background-color: var(--clrFnd);
 	}
+	
 </style>
+    <link rel="shortcut icon" href="../Imagenes/favicon.ico" type="image/x-icon" />
+    <script src="../rogLib.js"></script>
+    <script src="../componentes/rogMnuFlotante_c.js"></script>
+
+
 </head>
 <body>
 	<main></main>
+	<rog-mnu-flotante id="mnu">
+		<li as li-flotante opcion="mas">+</div>
+		<li as li.flotante opcion="menos">-</div>
+	</rog-mnu-flotante>
 </body>
 <script>
 	const familia = [
@@ -66,14 +93,21 @@
 		'Webdings',
 		'Wingdings'
 	];
+	
+	const fontSize = 14;
 
 	document.querySelector("MAIN").innerHTML = familia.map(tmpFont).join("");
+	
+	const mnu = document.getElementById("mnu");
+	
+	document.querySelectorAll(".badge").forEach(x => x.onmouseover = mnu.mst);
 
 	function tmpFont(nbFont) {
 	return `<div class="font">
-		<h3>${nbFont}</h3>
-		<div style="font-family: '${nbFont}'">
-			font-family: '${nbFont}';<br>
+		<h3>${nbFont}<span class="badge">${fontSize}</span></h3>
+		<div style="font-family: '${nbFont}'; font-Size: ${fontSize}px">
+			font-family: <br>
+			'${nbFont}';<br>
 			0 1 2 3 4 5 6 7 8 9
 		</div></div>`
 	}

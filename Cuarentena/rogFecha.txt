@@ -1,0 +1,36 @@
+
+function rogFmtFecha (f = new Date()) {
+    /*
+        toString          : Tue Dec 15 2020 13:08:12 GMT-0400 (hora de Venezuela)
+        toDateString      : Tue Dec 15 2020
+        toISOString       : 2020-12-15T17:08:12.901Z
+        toJSON            : 2020-12-15T17:08:12.901Z
+        toLocaleDateString: 15/12/2020
+        toLocaleString    : 15/12/2020 1:08:12 p. m.
+        toUTCString       : Tue, 15 Dec 2020 17:08:12 GMT
+    */
+    f = creaFecha(f);
+    return f ? {
+        amd: () => f.toJSON().slice(0,10),
+        dma: () => f.toLocaleDateString(),
+        am:  () => f.toJSON().slice(0,7),
+        Hora: (fmt=true) => rogFmt.dd(f.getHours())+(fmt ? ":" : "")+rogFmt.dd(f.getMinutes()),
+        fSerial: () => limpiaF(f.toJSON()),
+        a: () => f.getFullYear(),
+		full: () => f.toJSON(),
+        cool: () => getDiaSemana(true,f) + " " + f.getDate() +" de "+ nbMes(null,f),
+        serio: () => getDiaSemana(null,f) + " " + f.getDate() +" de "+ nbMes(null,f) +" de "+ f.getFullYear(),
+        coolfull: () => "ddd dd mmm hh:mm"
+    } : 
+    {
+        amd: () => f,
+        dma: () => f,
+        am:  () => f,
+        Hora: () => f,
+        fSerial: () => f,
+        a: () => f,
+		full: () => f,
+        cool: () => f,
+        serio: () => f
+    };
+}

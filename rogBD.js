@@ -6,9 +6,18 @@ const DEEPER  = true;   // Si "false" muestra mensajes más detallados
 console.assert(MUESTRA,"rogBD:", "Se muestran mensajes")
 
 const rogFiltra = require("./rogNodeLib").rogFiltra;
+const { assert } = require("console");
 const path      = require("path");
+const { desarma } = require("./rogNodeLib");
 
 let ObjectID;
+
+async function leeDatos(datos) {
+    let retorno = datos;
+    if(typeof datos === "string") retorno = await cargaArch(datos);
+
+    return retorno;
+}
 
 function nbSql(txt) {
     return txt.split(" ").length === 1 ?
@@ -16,6 +25,51 @@ function nbSql(txt) {
         txt
 }
 
+function qrySQL(query) {
+    function cadena(que, valor) {
+      return desarma(que)
+        .map((x) => `${x} LIKE '%${valor}%'`)
+        .join(" OR ");
+    }
+  
+    function operador(que) {
+      let retorno = {
+        gt: ">",
+        gte: ">=",
+        lte: "<=",
+        lt: "<"
+      }[que];
+      return retorno || que + " = ";
+    }
+  
+    const campos = Object.keys(query);
+    let retorno = "";
+  
+    if (campos.length) {
+      if (campos.length === 1) {
+        retorno = `${operador(campos[0])}  ${entreComillas(
+          query[campos[0]],
+          true
+        )}`;
+      } else if (campos.length === 2) {
+        if (campos[0] === "gte" && campos[1] === "lte")
+          retorno = `BETWEEN ${entreComillas(
+            query[campos[0]],
+            true
+          )} AND ${entreComillas(query[campos[1]], true)}`;
+        else {
+          if (campos[0] === "bsq")
+            retorno = cadena(query[campos[0]], query[campos[1]]);
+          else
+            retorno = campos
+              .map((x) => `${operador(x)} '%${query[x]}%'`)
+              .join(" AND ");
+        }
+      } else retorno = "Ya va (+2)";
+    }
+    return retorno;
+}
+  
 class pgBD {
     constructor(bd) {
         console.assert(DEEPER,"BD:",bd)
@@ -29,17 +83,30 @@ class pgBD {
         console.assert(DEEPER,resultado)
 
         if(resultado.fallo) console.error(resultado.msj);
-        else retorno = resultado[0].cant;
+        else retorno = resultado.rows.cant;
 
         return retorno;
     }
 
-    async lee(txtSql) {
-        if(txtSql.split(" ").length === 1) {
-            txtSql = "SELECT * FROM " +txtSql;
+    async lee(txtSql,query = {}) {
+        assert(MUESTRA,txtSql)
+        assert(MUESTRA,query)
+        
+        let retorno = rogError("Se encabritó en lee");
+        try {
+            if(txtSql.split(" ").length === 1) {
+                txtSql = "SELECT * FROM " +txtSql;
+            }
+
+            retorno = await pgSql(this.bd,agregaQuery(txtSql,query));
+
+        } catch (e) {
+            console.log("¡Error en lee!");
+            console.error(e);
+            retorno = rogError(e.message);
+        } finally {
+            return retorno.fallo ? retorno : retorno.rows;
         }
-        let retorno = await pgSql(this.bd,txtSql);
-        return retorno.fallo ? retorno : retorno.rows;
     }
     
     async agrega(txtSql) {
@@ -47,36 +114,47 @@ class pgBD {
     }
 
     async carga(tabla,datos) {
+        /*
+            @param tabla    nombre de la tabla a recibir los datos
+            @param datos    arreglo con los datos a cargar o nombre del archivo con los datos
+        */
         let resultados = [];
         let cant = 0;
+        let n = 0;
 
-        const n = datos.length;
-        console.group(`Vamos a Grabar ${n} registros en ${tabla}`)
-
-        console.log(`Comenzamos con ${await this.cuentaRegs(tabla)}`);
-
-        // const campos = lstCampos(datos[0]); Cada reg. puede ser distinto
         try {
-            let x = 0;
-            for(; x < n; x++) {
-                let resultado = await pgSql(this.bd,sqlInsert(tabla,datos[x],lstCampos(datos[x])));
-                if (resultado.fallo) {
-                    resultados.push(resultado);
-                    console.dir(resultado)
-                } else cant++;
-                console.assert(MUESTRA,x, cant)
-            };
+            const _datos = await leeDatos(datos);
+
+            if(_datos.fallo) resultados.push(_datos);
+            else {
+                n = _datos.length;
+                console.group(`Vamos a Grabar ${n} registros en ${tabla}`)
+
+                console.log(`Comenzamos con ${await this.cuentaRegs(tabla)}`);
+
+                // const campos = lstCampos(datos[0]); Cada reg. puede ser distinto
+                for(let x = 0; x < n; x++) {
+                    let resultado = await pgSql(this.bd,sqlInsert(tabla,_datos[x],lstCampos(_datos[x])));
+                    if (resultado.fallo) {
+                        resultados.push(resultado);
+                        console.dir(resultado)
+                    } else cant++;
+                    console.assert(MUESTRA,x, cant)
+                };
+            }
         } catch (e) {
             console.log(e);
         } finally {
-            console.groupEnd(`Terminamos con ${await this.cuentaRegs(this.bd,tabla)}`);
+            console.groupEnd(`Terminamos con ${await this.cuentaRegs(tabla)}`);
 
-            return { fallo: ((cant != resultados.length) || resultados.some(x => x.fallo)), 
-                msj: cant ? `grabó ${cant}` : "No grabó ningún registro",
-                cant, 
-                total: datos.length, 
-                resultados 
-            };
+            let retorno = { msj: `grabó ${cant}`, cant, total: n, resultados}
+
+            if((cant != resultados.length) || resultados.some(x => x.fallo)) {
+                retorno.msj = "No grabó ningún registro";
+                retorno = rogError(retorno);
+            }
+
+            return retorno;
         }
     }
 
@@ -85,11 +163,14 @@ class pgBD {
     }
     
     async elimina(txtSql) {
-        return pgSql(this.bd,txtSql)
+        let retorno = await pgSql(this.bd,txtSql);
+        if(!retorno.fallo) retorno = {eliminados: rowCount};
+
+        return retorno;
     }
     
-    async ejecuta(txtSql) {
-        return pgSql(this.bd,txtSql)
+    async ejecuta(txtSql,tabla,campos) {
+        return pgSql(this.bd,traduceSQL(txtSql,tabla,campos))
     }
     
     async cierra() {
@@ -133,9 +214,6 @@ function abrePg (prms) {
 
 function abreJson(prms) {
     let _datos = [];
-    let _dir = prms.dir ? 
-        (prms.dir +(prms.dir.endsWith('/') ? "" : "/")) : 
-        "./";
 
     function objeta(arr) {
         return arr.reduce((obj,x) => {
@@ -146,13 +224,15 @@ function abreJson(prms) {
 
     return new Promise((resolve,reject) => {
         try {
-            if(prms.nb) {
-                if(prms.nb instanceof Array) _datos = prms.nb.map(x => cargaTabla(x,_dir));
-                else if (typeof prms.nb === "string") _datos = [cargaTabla(prms.nb,_dir)];
-                else _datos = Object.keys(prms.nb).map (x => cargaTabla(x,_dir))
-            }
-                
-            resolve({dir: _dir, Datos: objeta(_datos)});
+            const _datos = prms.nb ?
+                Array.isArray(prms.nb) ?
+                    prms.nb.map(x => cargaTabla(x,prms.dir)) :
+                    [cargaTabla(prms.nb,prms.dir)]
+            : [];
+
+            console.log(`Salió de cargaTabla con ${_datos.length} Tablas leídas`)
+
+            resolve({dir: prms.dir, Datos: objeta(_datos)});
         } catch (e) {
             reject(e);
         }
@@ -160,16 +240,18 @@ function abreJson(prms) {
 }
 
 function abreMongo(prms) {
-    const { MongoClient: cliente, ObjectID: _ObjectID } = require('mongodb');
+    const { MongoClient: cliente, ObjectId: _ObjectID } = require('mongodb');
 
     ObjectID = _ObjectID;
-    
-    return new Promise((resolve,reject) =>
-        cliente.connect(
-            prms.url,
+    /**
+     * Deprecados, asegun:
             {
                 useNewUrlParser: true, useUnifiedTopology: true
             }
+     */
+    return new Promise((resolve,reject) =>
+        cliente.connect(
+            prms.url
         ).then(cliente => resolve(cliente.db(prms.nb))
         ).catch(reject)
     )
@@ -201,22 +283,43 @@ class mongoBD {
     }
     
     async lee(tabla,opciones,fn) {
-        return await this.acomoda(this.tab(tabla).find(opciones),fn);
+        let retorno = "Un cazzo!"
+        function getClave(opciones) {
+            let retorno;
+            ["id", "_id"].forEach(x => {
+                if(opciones.hasOwnProperty(x)) retorno = x;
+            });
+            return retorno;
+        }
+
+        try {
+            const _clave = getClave(opciones);
+            const _query = _clave ? {_id: this.getClave(opciones[_clave])} : opciones;
+            retorno = await this.tab(tabla).find(_query);
+            retorno = await retorno.toArray();
+        } catch(e) {
+            console.error(e);
+            retorno = rogError(e);
+        } finally {
+            return retorno;
+        }
+
     }
     
-    async agr(tabla,condiciones,fn) {
+    async aggr(tabla,condiciones,fn) {
         return await this.acomoda(this.tab(tabla).aggregate(this.opcAgg(condiciones)),fn);
     }
     
     async agrega(tabla,buffer,fn) {
-        console.log("Buffer:")
+        console.log("Agrega Buffer:")
         console.log(buffer)
         
-        let retorno = await this.tab(tabla).insertOne(buffer);
-        console.log("Volvió de mongo agregar")
-        retorno = retorno.insertedCount === 1 ? buffer : { fallo: true, registrado: insertedCount}
-        console.log(retorno)
-        return retorno;
+        try {
+            let retorno = await this.tab(tabla).insertOne(buffer);
+            return retorno;
+        } catch (error) {
+            throw new Error(error);            
+        }
     }
     
     async modifica(tabla,buffer) {
@@ -224,10 +327,15 @@ class mongoBD {
         let id = bofe._id
         delete bofe._id
         
-        return await this.tab(tabla).findOneAndReplace(
-            {id: id},
-            bofe
+        let retorno = await this.tab(tabla).findOneAndReplace(
+            {_id: id},
+            bofe,
+            {
+                returnOriginal: false
+            }
         );
+
+        return retorno.value
     }
     
     async elimina(tabla,id) {
@@ -239,25 +347,15 @@ class mongoBD {
         console.log(datos.length,"registros");
         
         let retorno = await this.tab(tabla).insertMany(datos);
-        console.log("Volvió de mongo cargar")
-        retorno = retorno.result.n === datos.length ? retorno.result : { fallo: true, cant: datos.length, registrado: retorno.result.n}
+        retorno = retorno.result.n === datos.length ? retorno.result : rogError({cant: datos.length, registrado: retorno.result.n});
         return retorno;
     }
-        
+
     async cierra() {
     }
 
     async acomoda(bson,fn) {
-        let retorno;
-        try {
-            retorno = await bson.toArray();
-            if(fn) retorno = await Promise.all(retorno.map(fn));
-        } catch (e) {
-            console.error(e);
-            retorno = {fallo: true, msj: e.message};
-        } finally {
-            return retorno;
-        }    
+        return await bson.toArray();
     }
 
     opcAgg(opcs) {
@@ -274,7 +372,7 @@ class mongoBD {
             elimina: this.elimina,
             cierra: this.cierra,
             tab: this.tab,
-            agr: this.agr,
+            aggr: this.aggr,
             carga: this.carga,
             getClave: this.getClave
         }
@@ -391,15 +489,16 @@ async function pgSql(bd,txtSql) {
         console.assert(DEEPER,"conexión:",cnx);
 
 		let datos = await cnx.query(txtSql);
-        console.assert(MUESTRA,"Devuelve:",datos.lenght,"regs.");
+        console.assert(MUESTRA,"Devuelve:",datos.rowCount,"regs.");
         console.assert(DEEPER,"Devuelve:",datos);
 		retorno = datos;
 
         cnx.release();
 	} catch (e) {
-		retorno = { fallo: true, msj: e.message, sql: txtSql };
+		retorno = rogError({e, sql: txtSql});
 	} finally {
         console.assert(DEEPER,"Resultado:",retorno);
+
         return retorno;
     }
 }
@@ -425,6 +524,8 @@ const dbms = {
 
 class rogBD {
     constructor (bd,datos) {
+        console.log(datos.txt);
+        
         this.nb       = datos.nb;
         this.datos    = datos;
         this.bd       = bd;
@@ -478,7 +579,6 @@ function abreBDs() {
             let bd = {};
 
             bds.forEach((x,i) => {
-                console.log(x.datos.txt)
                 bd[x.nb || "bd" +i] = x
             });
 
@@ -494,8 +594,10 @@ function abreBD (x) {
     let bdDat = getBDDat(x)
     return new Promise((resolve,reject) => {
         dbms[bdDat.dbms].abre((bdDat.prms))
-            .then(bd => resolve(new rogBD(bd,bdDat)))
-            .catch(reject)
+            .then(bd => {
+                if(bd.fallo) reject(bd)
+                else resolve(new rogBD(bd,bdDat))
+            }).catch(reject)
     });
 }
 
@@ -506,6 +608,16 @@ function cierraBD(bds) {
     }
 }
 
+/**
+ * Funciones con Archivos
+ */
+
+/**
+ * Crea un Objeto Tabla para Json
+ * @param {string} nb Nombre de la Tabla en el esquema
+ * @param {string} dir Directorio donde residen los datos
+ * @returns 
+ */
 function cargaTabla(nb,dir) {
     let _alias = nb;
     let _nb    = nb;
@@ -519,27 +631,43 @@ function cargaTabla(nb,dir) {
 }
 
 function leeTabla(alias,nb,dir) {
+    const tabla = leeJson(dir, nb);
+    console.log(`Leyo ${tabla.length} registros de ${nb}`)
     return {
         alias,
         nb,
-        regs: require(path.join(__dirname,dir,nb+".json"))
+        regs: tabla
     }
 }
 
-function leeXl(nbLibro,nbHoja) {
-    const xl  = require(dirLib+"rogXL");
+function Extension(nbArchivo){
+    const pos = nbArchivo.lastIndexOf(".");
+    let retorno = pos >= 0 ? nbArchivo.slice(pos +1) : "";
+    return retorno.startsWith("/") ? "" : retorno;
+}
 
-    const libro = new xl.Libro(nbLibro);
+function nbArch(ext,...partes) {
+    let nb = path.join(process.cwd(),...partes);
+    let _ext = Extension(nb)
+    return nb +(_ext ? "" : ext)
+}
 
-    function hoja(nbHoja) {
-        return xl.lib.sheet_to_json(libro.wb.Sheets[nbHoja]);
-    }
+function leeJson() {
+    return require(nbArch(".json",...arguments));
+}
 
-    if(nbHoja) {
-        return hoja(isNaN(nbHoja) ? nbHoja : libro.ws.SheetNames[hoja]);
-    } else {
-        return libro.ws.SheetNames.map(hoja);
-    }
+async function cargaArch(nb) {
+    const path = require("path");
+    const ext = Extension(nbArch);
+    
+    if((!ext) || ext === "csv") {
+        const parsero = require("./parsero");
+        return parsero(path.join(process.cwd(), nbArch));
+    } else if(ext === "json")
+        return require(path.join(process.cwd(), nbArch));
+    else if(ext.startsWith("xls"))
+        return abreXL(path.join(process.cwd(), nbArch));
+    else throw new Error(`No sé cómo trabajar con archivos de tipo "${ext}"`)
 }
 
 function guarda(datos,nb) {
@@ -551,6 +679,8 @@ function guarda(datos,nb) {
     fs.writeFileSync(nb, JSON.stringify(datos));
 }
 
+// Construye SQL
+
 function lstCampos(bofe) {
     return Object.keys(bofe).join();
 }
@@ -560,7 +690,7 @@ function lstValores(datos) {
 }
 
 function lstMod(datos) {
-    return Object.keys(datos).map(nbCampo => entreComillas(nbCampo) +" = " + entreComillas(datos[nbCampo]))
+    return Object.keys(datos).map(nbCampo => `${entreComillas(nbCampo)} = ${entreComillas(datos[nbCampo])}`);
 }
 
 function sqlInsert(tabla,datos,campos = lstCampos(datos)) {
@@ -576,7 +706,80 @@ function entreComillas(texto,dobles) {
     return comillas +texto +comillas;
 }
 
+/*
+    Recibe un objeto y lo convierte en 
+    una instrucción SQL
+    INSERT o UPDATE según el valor de "ID"
+*/
+function traduceSQL(txtSQL,tabla,campos) {
+    if(typeof txtSQL === "string") return txtSQL;
+    else {
+        return txtSQL.id ? sqlMod(tabla,txtSQL) : sqlInsert(tabla,txtSQL,campos);
+    }
+}
+
+/*
+    Funciones de transformación
+    objeto Query a SQL
+*/
+function agregaQuery(txt,query) {
+    let retorno = txt;
+
+    if(Object.keys(query).length) retorno = txt +
+        (txt.toLowerCase().includes("where") ? " AND (" : " WHERE (") +
+        traduceQuery(query) +")";
+    return retorno;
+}
+
+function traduceQuery(query) {
+    que = Object.keys(query)[0];
+    return que +" = " +entreComillas(query[que]);
+}
+
 exports.abreBD   = abreBD;
 exports.abreBDs  = abreBDs;
 exports.cierraBD = cierraBD;
-exports.guarda   = guarda;
+exports.util     = {
+    guarda,
+    leeTabla,
+    leeJson,
+    carga: cargaArch,
+    traduceSQL,
+    traduceQuery,
+};
+
+/**
+ * Crea un objeto de error reconocible por las App:
+ * @property {boolean} fallo indica que es un mensaje de error
+ * @property {number}  status es el código del Error (Http o creado por el usuario)
+ * @property {string}  mensaje es el texto del error
+ * Cualquier otra propiedad será copiada de un objeto enviado como parámetro
+ * 
+ * Los tipos de parámetros previstos son:
+ * Un objeto: (Objetos Error incluídos) Se copian sus propiedades al resultado
+ * Un número: Se usa como código del error del resultado
+ * Un texto:  Se usa como mensaje del resultado
+ * 
+ * Un parámetro de otro tipo será enviado en la propiedad @property {any} wtf
+ */
+function rogError() {
+    let retorno = {fallo: true, status: 666, msj: "Algo malo pasó"}
+
+    Array.from(arguments).forEach(arg => {
+        if(typeof arg === "object") retorno = Object.assign(retorno, arg);
+        else if(typeof arg === "number") retorno.code = arg;
+        else if(typeof arg === "string") retorno.msj = arg;
+        else retorno.wtf = arg;
+    });
+
+    return retorno;
+}
+
+function abreXL(nbArch) {
+    const XL = require("js-xlsx");
+    const libro = XL.readFile(nbArch);
+
+    hoja = XL.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]])
+
+    return hoja
+}

@@ -1,12 +1,13 @@
 // Objeto que permite visualizar datos agrupados 
 
 class rogCuadro {
-  constructor (grupos,datos,dom) {
-    this.w = {};  // Hasta que FF quiera
-    this.dom    = dom;
-    this.grupos = grupos;
-    this.datos  = datos;
-
+  constructor (datos) {
+    this.w = {};
+    this.dom    = datos.dom;
+    this.grupos = datos.grupos;
+    this.datos  = datos.datos;
+    this.titulo = datos.titulo;
+  
     this.mst();
   }  
   
@@ -29,7 +30,7 @@ class rogCuadro {
   }
   
   set datos(datos) {
-    this.w.datos = datos;
+    this.w.datos = datos || [];
     this.mst();
   }
 
@@ -40,21 +41,21 @@ class rogCuadro {
   set titulo(valor) {
     this.w.titulo = valor;
   }
+  
+  get titulo() {
+    return this.w.titulo || this.titGrupos;
+  }
 
   get titGrupos() {
       return this.w.grupos.join(" / ");
   }
-  
-  get titulo() {
-      return this.w.titulo || this.titGrupos;
-  }
 
   mst () {
-    if(this.w.grupos && this.w.datos) {
+    if(this.grupos && this.datos) {
       mstCuenta(
         creaMatriz(
-          cuentaGrupo(this.w.grupos,this.w.datos))
-            ,this.w.dom,this.titDatos,this.titGrupos)
+          cuentaGrupo(this.grupos,this.datos))
+            ,this.w.dom,this.titulo,this.titGrupos)
     }
   }
 }
@@ -64,16 +65,11 @@ function cuentaLinea(Cuenta,grupos,linea) {
   
     grupos.forEach((x,i) => {
       let valor = linea[x];
-      if(!retorno[valor]) retorno[valor] = { _cant: 0, _nivel: i };
-
-      incrementa(retorno[valor]);
+      if(retorno[valor]) retorno[valor]._cant++;
+      else retorno[valor] = { _cant: 1, _nivel: i };
 
       retorno = retorno[valor];
     });
-}
-
-function incrementa(que) {
-  que._cant++;
 }
 
 function cuentaGrupo(grupos,valores) {
@@ -153,11 +149,12 @@ function creaMatriz(Cuenta) {
   return matriz;
 }
 
-function mstCuenta(matriz,dom,titDatos,titGrupos) {
-  let _tit = domTxt(titDatos,"h3","rogTitDatos");
+function mstCuenta(matriz,dom,titulo,titGrupos) {
+  let _tit = domTxt(titulo,"h3","rogtitulo");
   _tit += domTxt(titGrupos,"h3","rogTitGrupos");
   
   let _grid = document.createElement("DIV");
+  _grid.style.display = "grid";
   _grid.className = "rogCuadro";
   _grid.innerHTML = "G R I D"
   if(dom) {
@@ -173,7 +170,8 @@ function mstCuenta(matriz,dom,titDatos,titGrupos) {
       let col = matriz[y][x];
       if(typeof col === "object") txt += domTxt(def(col.valor),"div","rogCuadro_"+col.clase);
       else txt += domTxt(def(col),"div");
-  _grid.innerHTML = txt;
+      
+      _grid.innerHTML = txt;
     }
   }
   _grid.innerHTML = txt;

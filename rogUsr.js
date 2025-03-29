@@ -58,11 +58,11 @@ class rogUsr {
         
         retorno += "</div>"
         retorno += "<div class='rogUsrDatos'>"
-        for(let x in this)
-{        retorno += "<label>" +x + ":</label> "+this[x]+"<br/>";
-}        retorno += "</div>"
 
+        for(let x in this) retorno += "<label>" +x + ":</label> "+this[x]+"<br/>";
         retorno += "</div>"
+        retorno += "</div>"
+
         // SALIDA: retorna el codigo HTML o llena el elemento correspondiente
         if(dom) {
             let wDom = typeof dom === "string" ? document.getElementById(dom) : dom;
@@ -70,3 +70,4 @@ class rogUsr {
         } else return retorno;
     }
 }
+

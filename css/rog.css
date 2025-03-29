@@ -1,4 +1,8 @@
-/* Estilos para los formularios creados con la Librería rogLib */
+/* Estilos para los elementos creados con la Librería rogLib */
+
+*, ::before, ::after {
+  box-sizing: border-box;
+}
 
 body {
 	margin: 0;
@@ -6,8 +10,7 @@ body {
   background-color: var(--clrFnd);
   color: var(--clrTxt);
 
-  box-sizing: border-box;
-  --sombra: 0 1.5px 5px 0 var(--clrTxt);
+  --sombra: 0 1px 3px 0 currentColor;
   --bezier: cubic-bezier(0.18, 0.89, 0.32, 1.28);
   font-family: 'Raleway', sans-serif;
   font-size: 14px;
@@ -15,11 +18,23 @@ body {
 	scroll-behavior: smooth;
 }
 
+button,
+input,
+textarea,
+select {
+	font: inherit
+}
+
+select {
+  background-color: var(--clrFndObj);
+  color: var(--clrTxtObj);
+}
+
 ul, ol {
 	background-color: var(--clrFndUL);
 	color: var(--clrTxtUL);
   box-shadow: var(--sombra);
-  border-radius: 0 0 25px 0;
+  border-radius: 0 0 5px 0;
   line-height: 150%;
   padding: 1.5rem;
 }
@@ -33,7 +48,7 @@ li:focus {
 nav {
 	background-color: var(--clrFndObj);
 	color: var(--clrTxtObj);
-  padding: .5rem 1rem;
+  padding: .25em 1em;
 }
 
 .fles {
@@ -44,9 +59,75 @@ nav {
 label {
 	font-style: oblique;
 	font-weight: bold;
-	width: 100px;
-	float: left;
+  display: var(--dspLabel, inline-block);
+	width: var(--szLabel, 100px);
 }
+
+/* Campos de Entrada */
+/*
+  Vieja
+*/ 
+.linCampos {
+  display: flex;
+}
+.linCampos div {
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+.linCampos input {
+  size: 10;
+}
+
+/*
+  Mas campos de entrada
+*/
+
+.campinp {
+  position: relative;
+  margin-bottom: .5em;
+  padding: .75em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.campinp::after {
+  content: '';
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.campinp:hover::after {
+  opacity: 1;
+}
+
+.campinp:not([apilado]) {
+  display: flex;
+  justify-content: space-between;
+}
+
+.campinp label {
+  display: inline-block;
+  max-width: 100px;
+}
+
+[apilado] label {
+  display: block;
+  max-width: none;
+}
+
+[apilado] input {
+  width: 100%;
+}
+
+/* Campos y "banderas" */
 
 textarea {
   vertical-align: top;
@@ -60,16 +141,44 @@ img {
   color: #FF0000;
 }
 
+.rogIdMenu {
+  height: 3em;
+}
+
+.espera {
+  cursor: wait;
+}
+
+/* B o t o n e s */
+.badge {
+  vertical-align: super;
+  border-radius: 100%;
+  font-size: 75%;
+  padding: .3em;
+  color: var(--clrTxtObj);
+  background-color: var(--clrFndObj);
+  border: 1px solid var(--clrTxtObj);
+}
+
+.rogBotonera {
+  display: flex;
+  justify-content: space-evenly;
+}
+
 .rogBtn {
   background-color: var(--clrFndObj);
   color: var(--clrTxtObj);
 
+  font-size: small;
+
   border: none;
-  padding: .5rem 1rem;
+  border-right: silver;
+  border-bottom: silver;
+  padding: .5em 1em;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  margin: .3rem .2rem;
+  margin: .3em .2em;
   cursor: pointer;
   
   transition: trasform 125ms ease-in-out;
@@ -77,27 +186,35 @@ img {
 
   .rogBtn:hover,
   .rogBtn:focus  {
-	border: initial;
-	transform: scale(1.2);
+	  border: initial;
     font-weight: bolder;
     box-shadow: var(--sombra);
   }
 
-  .rogBtn:disabled:hover {
+  .rogBtn:disabled {
+    opacity: .5;
     cursor: not-allowed;
-    font-weight: none;
-    box-shadow: none;
   }
 
-.rogIdMenu {
-    height: 3em;
-}
+  .rogBtn:active {
+    background-color: #2f2f2f;
+    animation: btnClick 1s linear;
+  }
+  
+  @keyframes btnClick {
+    0% {
+      background-color: black;
+    }
+    50% {
+      transform: scale(0.8);
+    }
+  
+    100% {
+      transform: scale(1);
+    }
+  }
 
-.espera {
-    cursor: wait;
-}
-
-/* Tablas */
+/* T a b l a s */
 	table {
 		border-collapse: collapse;
 		width: 100%;
@@ -108,7 +225,8 @@ img {
     }
 
 	th, td {
-		padding: 8px;
+		padding: .35em;
+    border-right: 1px solid #f2f2f2;
 	}
 
 	tr:nth-child(even){background-color: #f2f2f2}
@@ -127,17 +245,25 @@ img {
       cursor: row-resize;
     }
 
-    input[type=number] {
-      text-align: right;
-    }
-    input.listo::before {
-      content: "✔";
-      color: green;
-    }
-    input.error::before {
-      content: "✘";
-      color: red;
-    }
+/* Periquitos */
+
+  input[type=number] {
+    text-align: right;
+  }
+
+  [required]::after {
+    content: "*";
+    color: red;
+  }
+
+  .vb::before {
+    content: "✔";
+    color: green;
+  }
+  .error::before {
+    content: "✘";
+    color: red;
+  }
   
 	/* M O D A L */
 	.rogModal {
@@ -152,22 +278,14 @@ img {
 
 		overflow: auto;
 		background-color: rgba(0,0,0,0.4); 
-
-        align-items: center;
+    align-items: center;
 	}
 
     .rogModal.activa {
-        display: flex;
-		justify-content: space-around;
+      display: flex;
+  		justify-content: center;
+  		align-content: center;
     }
-
-	.cntModal {
-		background-color: #fefefe;
-		margin: 5% auto; 
-		padding: 20px;
-		border: 1px solid #888;
-		width: 90%;
-	}
 
 	.rogCierraModal {
 		position: fixed;
@@ -186,6 +304,7 @@ img {
 
 	.rogCierraModal:hover, .rogCierraModal:focus {
 		opacity: 1;
+        rotate: 45deg;
 	}
 
     .rogVnt {
@@ -197,7 +316,7 @@ img {
     }
 
     .rogModal .rogVnt {
-      position: relative;
+      position: unset;
       display: block;
     }
 
@@ -207,14 +326,17 @@ img {
 
     .rogVnt header {
       position: relative;
+
+      margin: 0;
+      padding: 2px;
+
       background-color: var(--clrFndObj);
       color: var(--clrTxtObj);
       text-align: center;
-      padding: 2px;
     }
 
     .rogVnt main {
-      padding: 0.5rem;
+      padding: 2rem;
       overflow: auto;
     }
 
@@ -222,6 +344,7 @@ img {
       position: absolute;
       top: 0.5px;
       right: 0.75px;
+      height: 100%;
 
       color: white;
       background-color: #000;
@@ -233,17 +356,38 @@ img {
 
     .cierraVnt:hover {
       opacity: 1;
+      rotate: 45deg;
     }
 
-	/* Footer y Firma */
+    .cierraVnt svg {
+        height: 100%;
+    }
+
+/* Búsqueda */
+.rogBsq > div > div {
+  display: none;
+}
+
+.rogBsq:hover > div > div,
+.rogBsq:focus-within > div > div {
+  display: flex;
+}
+
+.rogBsq.flexible {
+  position: absolute;
+}
+
+/* Footer  */
 footer {
 	display: flex;
-	height: 2em;
+	justify-content: flex-end;
+
+  height: 2em;
 	border: 0;
 	box-shadow: 0 10px 10px -10px #8c8c8c inset;
-	padding: 5px;
-	top: 10px;
-	justify-content: flex-end;
+
+  padding: 5px;
+	margin-top: 10px;
 }
 
 footer .creditos {
@@ -253,61 +397,10 @@ footer .creditos {
 footer .logo {
 	height: 80%;
 }
-.rogFirma {
-	background-color: transparent;
-}
-
-.rogFirma-enlaces {
-  background-color: #004d66;
-  background-repeat: no-repeat;
-  color: silver;
-  text-shadow: .1rem .1rem black;
-  position: fixed;
-}
-
-.rogFirma-enlace {
-  border: 2px solid currentcolor;
-  border-radius: 25px;
-
-  color: silver;
-  font-size: 1.5rem;
-  display: block;
-  padding : 15px;
-  margin: auto auto;
-
-  -webkit-transform: rotateZ(45deg);
-          transform: rotateZ(45deg);
-}
-
-.rogFirma-enlace a {
-  color: currentcolor;
-}
 
 .rogLogo:hover {
   -ms-transform: scaleY(1.5); /* IE 9 */
   transform: scale(1.5);
-}
-
-.rogFirma:hover .rogFirma-enlaces {
-  display: block;
-
-  bottom:   100px;
-  right:     10px;
-}
-
-.rogFirma:hover .rogFirma-enlaces .rogFirma-enlace {
-  transition: all 2s ease-in;
-
-  -webkit-transform: rotateZ(0deg);
-          transform: rotateZ(0deg);
-}
-
-.rogCapa2 {
-  transition-delay: .5s;
-}
-
-.rogCapa3 {
-  transition-delay: 1s;
 }
 
 /*  Barra de desplazamiento */
@@ -325,6 +418,18 @@ footer .logo {
 ::-webkit-scrollbar-thumb {
 	background: linear-gradient(transparent, var(--clrTxt));
 	border-radius: 25px;
+}
+
+/* Efectos */
+/* Transparencia */
+.vidrio {
+  opacity: 0.7;
+  background-image: linear-gradient(
+    to right bottom,
+    rgba(255, 255, 255, 0.7),
+    rgba(255, 255, 255, 0.3)
+  );
+  backdrop-filter: blur(2rem);
 }
 
 /* Colorear SVGs */
