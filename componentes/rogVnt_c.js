@@ -167,14 +167,19 @@ customElements.define("rog-vnt", rogVnt);
 
 function tmprogVnt(obj) {
   return `<style>
-        dialog {
-          padding: 0;
-          height: ${obj.height};
-          width:  ${obj.width};
-          /*
-          top:    ${obj.top};
-          left:   ${obj.left};
-          */
+	dialog {
+            position: fixed;
+            margin: 0; /* Vital para que las coordenadas de rogDonna sean exactas */
+            padding: 0;
+            border: none;
+            background: var(--clrFndSec);
+            box-shadow: var(--sombra);
+            height: ${obj.height};
+            width:  ${obj.width};
+            top:    ${obj.top};
+            left:   ${obj.left};
+            overflow: hidden;
+            border-radius: 8px;
         }
 
         .modal::before {
@@ -185,13 +190,17 @@ function tmprogVnt(obj) {
         }
 
         header {
-            position: relative;
+	    cursor: grab; /* Indica que la Donna es móvil */
+            user-select: none;            position: relative;
             background-color: var(--clrFndObj);
             color: var(--clrTxtObj);
             text-align: center;
             padding: 2px;              
         }
 
+	header:active {
+            cursor: grabbing;
+        }
         main {
             padding: 0.5rem;
             overflow: auto;
@@ -250,55 +259,26 @@ function eMovile(vnt) {
 
 function rogDonna(hdr) {
   let inicio = { x: 0, y: 0 };
-  let traza = [];
+  const vnt = hdr.parentElement; // El dialog
 
-  hdr.style.cursor = "grab";
   hdr.onmousedown = cogelo;
-
-  const vnt = hdr.parentElement
 
   function cogelo(e) {
     e.preventDefault();
-    // Posición inicial
+    
+    // El "Foco" de la ópera: traer al frente
+    document.querySelectorAll('rog-vnt').forEach(el => {
+        const d = el.shadowRoot.querySelector('dialog');
+        if(d) d.style.zIndex = "100";
+    });
+    vnt.style.zIndex = "1000";
+
     inicio.x = e.clientX;
     inicio.y = e.clientY;
-    traza.push(inicio);
+    
     document.onmouseup = sueltalo;
     document.onmousemove = muevelo;
   }
-
-  function muevelo(e) {
-    e.preventDefault();
-
-    let posx = inicio.x - e.clientX;
-    let posy = inicio.y - e.clientY;
-    inicio.x = e.clientX;
-    inicio.y = e.clientY;
-
-    vnt.style.top  = (vnt.offsetTop - posy) + "px";
-    vnt.style.left = (vnt.offsetLeft - posx) + "px";
-
-    traza.push({
-		  inicio,
-		  client: {
-			  x: e.clientX,
-			  y: e.clientY,
-		  },
-		  pos: {
-			  x: posx,
-			  y: posy
-		  },
-      vntX: vnt.style.left,
-      vntY: vnt.style.top
-    });
-  }
-
-  function sueltalo() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    console.log(traza);
-  }
-}
 
 class rogVntEspera extends rogVnt {
   constructor(props = {}) {

@@ -197,8 +197,8 @@ function tmpCSSrogSesion(obj) {
 
     padding: .25em;
     border-radius: 5px;
-    background-color: var(--clrFndObj);
-    color: var(--clrTxtObj);
+    background-color: var(--clrObjFnd);
+    color: var(--clrObjTxt);
 
     display: flex;
     justify-content: space-between;
@@ -228,8 +228,8 @@ function tmpCSSrogSesion(obj) {
   }
     
   .menu {
-    color: var(--clrTxtObj);
-    background-color: var(--clrFndObj);
+    color: var(--clrObjTxt);
+    background-color: var(--clrObjFnd);
     padding-inline-start: 0;
   }
 
@@ -287,8 +287,8 @@ function tmpCSSrogSesion(obj) {
     }
     
     #mnuSuiche:checked + .mnuPpalOpciones {
-      background-color: var(--clrFndObj);
-      color: var(--clrTxtObj);
+      background-color: var(--clrObjFnd);
+      color: var(--clrObjTxt);
       height: max-content;
     }
     
